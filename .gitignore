@@ -1,0 +1,56 @@
+# === CRM DATA (contains PII — emails, phones, names) ===
+data/*.xlsx
+data/*.csv
+data/*.json
+
+# === CREDENTIALS & SECRETS ===
+.env
+*.env
+credentials.json
+token.json
+client_secret*.json
+*.session
+.credits.json
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+.Python
+pip-log.txt
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Logs (keep templates, ignore actual logs) ===
+logs/sessions/*.json
+logs/sessions/*.md
+logs/feedback/*.json
+logs/feedback/*.md
+logs/retrospectives/*.md
+!logs/**/_template.*
+
+# === Temp files ===
+zi*
+*.tmp
+*.bak
+
+# === Backups ===
+*_backup.*
+backup_*/
+adsgram_backup_*.zip
+
+# === Claude worktrees ===
+.claude/worktrees/

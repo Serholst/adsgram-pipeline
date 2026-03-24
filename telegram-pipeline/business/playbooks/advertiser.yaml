@@ -1,0 +1,57 @@
+role: "Advertiser"
+name: "Advertiser Acquisition"
+
+subtypes:
+  A:
+    name: "Direct intent (active/exploring)"
+    description: "Specifically seeking TG placements — already decided Telegram is the channel"
+    pain: "Hard to find channels in right niche, opaque pricing, no quality guarantees"
+    value_prop: "Access to 10K+ channels through one platform, no negotiations per channel"
+    pitch_template: |
+      {name}, saw you're looking for {their_need} for {what_they_promote}.
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      Finding channels manually is slow and pricing is opaque. AdsGram lets you pick your niche and geo — the platform matches placements automatically across 10K+ channels.
+
+      Want to set up a test campaign for {target_niche}?
+
+  B:
+    name: "Indirect intent (exploring options)"
+    description: "Looking for promotion generally, TG as one of several options"
+    pain: "Budget spread across channels without understanding what works"
+    value_prop: "Quick TG test: launch campaign in 15 min, from minimal budget"
+    pitch_template: |
+      {name}, saw you're promoting {what_they_promote} and exploring growth channels.
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      Hard to know if Telegram works for your audience until you try. AdsGram lets you launch a test campaign in 15 minutes with full analytics from day one.
+
+      What does your current UA mix look like?
+
+  C:
+    name: "Passive (not actively seeking ads)"
+    description: "Networks in chat, talks about project, not buying ads currently"
+    pain: "Doesn't know effective Telegram user acquisition channels"
+    value_prop: "Telegram is cheapest UA channel for crypto/gaming/fintech audience"
+    pitch_template: |
+      {name}, saw you're working on {what_they_promote}.
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      When you're ready to acquire users on Telegram — we have inventory across {target_niche}. Telegram is one of the most cost-effective UA channels for this audience right now.
+
+      How's the project going — actively growing or exploring channels?
+
+default_subtype: "B"
+
+personalization_variables:
+  - name
+  - what_they_promote
+  - their_need
+  - target_niche
+  - target_geo
+  - intent_level
+  - readiness_level
+  - sender_name

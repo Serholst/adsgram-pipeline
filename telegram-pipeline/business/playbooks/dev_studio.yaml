@@ -1,0 +1,54 @@
+role: "Dev Studio"
+name: "Dev Studio Integration"
+
+subtypes:
+  A:
+    name: "Own product"
+    description: "Builds own product in Telegram ecosystem — mini-apps, bots, games"
+    pain: "Monetization is separate task, distracts from development, no sales team"
+    value_prop: "Monetization without sales team: integrate SDK and earn"
+    pitch_template: |
+      {name}, saw you're building {what_they_build}.
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      Monetizing mini-apps is usually a separate headache, especially without a sales team. AdsGram SDK integrates in a couple of hours — ad units start earning automatically, no need to find advertisers yourself.
+
+      What's your stack? I'll send docs and an integration example for your framework.
+
+  B:
+    name: "Contract work (client projects)"
+    description: "Creates mini-apps/bots for clients — builds on contract"
+    pain: "After project delivery — no recurring revenue, each project starts from zero"
+    value_prop: "Competitive advantage: your app earns from day one + rev share from delivered projects"
+    pitch_template: |
+      {name}, saw you build {what_they_build} for clients.
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      After you deliver a project, you usually stop earning from it. If you integrate AdsGram SDK into your builds — your client gets monetization out of the box, and you get rev share from every project in your portfolio.
+
+      Interested in discussing the partner model? I can show you studio terms.
+
+  C:
+    name: "Platform/tools"
+    description: "Builds infrastructure/tools for other developers"
+    pain: "Monetizing platform is hard — not everyone ready to pay subscriptions"
+    value_prop: "Alternative business model: ads vs subscriptions, your users get monetization"
+    pitch_template: |
+      {name}, saw you're building {what_they_build}.
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      Monetizing a platform through subscriptions doesn't always work, especially for smaller users. Integrating AdsGram gives your users built-in monetization — you get rev share from all ad revenue on your platform.
+
+      What does your current client acquisition look like?
+
+default_subtype: "A"
+
+personalization_variables:
+  - name
+  - what_they_build
+  - their_tech
+  - their_clients
+  - sender_name

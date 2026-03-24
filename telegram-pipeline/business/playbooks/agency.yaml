@@ -1,0 +1,55 @@
+role: "Agency"
+name: "Agency Partnership"
+
+subtypes:
+  A:
+    name: "KOL Manager (sells placements)"
+    description: "Manages channel pool, sells placements — has network of channels/influencers"
+    pain: "Operations scale linearly with channels — more KOLs = more manual work"
+    value_prop: "Extra income for KOLs without extra effort from you"
+    pitch_template: |
+      Saw you manage {their_scale} and sell placements.
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      The more channels you manage, the more manual work per advertiser. AdsGram can be an extra revenue stream for your KOLs — we auto-fill empty slots with ads, you get rev share.
+
+      How do you currently handle slot filling? Curious where AdsGram could complement.
+
+  B:
+    name: "Media Buying (buys traffic)"
+    description: "Buys traffic for clients — purchases ads for brands/projects"
+    pain: "Manual channel search, opaque pricing, hard to scale purchases"
+    value_prop: "One platform for purchases: 10K+ channels, transparent CPMs, client analytics"
+    pitch_template: |
+      {name}, saw you're buying traffic for clients.
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      Finding channels manually and negotiating with each one doesn't scale. Through AdsGram you launch campaigns across 10K+ channels via one interface — transparent CPMs, analytics per placement.
+
+      What verticals are your clients mostly in?
+
+  C:
+    name: "Unclear model"
+    description: "Works with KOLs/channels but model unclear — mentions KOLs or channels but unclear if selling or buying"
+    pain: "Looking for partnership, wants to understand terms"
+    value_prop: "AdsGram works both sides — seller and buyer, we'll match model to your scheme"
+    pitch_template: |
+      {name}, saw you work with KOLs / channels.
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      AdsGram works on both sides — selling placements and buying traffic. We also have a partner program for agencies.
+
+      Do you sell placements or buy traffic for clients? I'll match the right model for you.
+
+default_subtype: "C"
+
+personalization_variables:
+  - name
+  - agency_type
+  - their_scale
+  - their_offer
+  - work_model
+  - sender_name

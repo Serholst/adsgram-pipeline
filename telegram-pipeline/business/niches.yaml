@@ -1,0 +1,21 @@
+# Niche list — used for LLM classification and ICP scoring
+# Edit tier when advertiser demand shifts for a category
+# Tiers: 1 = high demand, 2 = medium, 3 = low, disqualify = no advertiser demand
+
+niches:
+  - name: "Crypto/TON/Web3"
+    tier: 1
+  - name: "Finance/Trading"
+    tier: 1
+  - name: "Gambling/Betting"
+    tier: 1
+  - name: "Entertainment/Memes"
+    tier: 2
+  - name: "News"
+    tier: 2
+  - name: "Dating 18+"
+    tier: 2
+  - name: "Lifestyle/Neutral"
+    tier: 3
+  - name: "B2B/Professional"
+    tier: "disqualify"

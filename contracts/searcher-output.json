@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Searcher Agent Output",
+  "description": "Контракт: что возвращает Searcher Agent → принимает Qualifier Agent",
+  "type": "object",
+  "required": ["search_metadata", "leads"],
+  "properties": {
+    "search_metadata": {
+      "type": "object",
+      "required": ["query", "domains_searched", "domains_blocked", "timestamp", "total_found", "new", "already_in_crm", "already_in_apollo", "flagged"],
+      "properties": {
+        "query": { "type": "string", "description": "Исходный запрос пользователя" },
+        "domains_searched": { "type": "array", "items": { "type": "string" }, "description": "Домены, по которым выполнен поиск" },
+        "domains_blocked": { "type": "array", "items": { "type": "string" }, "description": "Домены из exclusion set" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "total_found": { "type": "integer" },
+        "new": { "type": "integer" },
+        "already_in_crm": { "type": "integer" },
+        "already_in_apollo": { "type": "integer" },
+        "flagged": { "type": "integer" }
+      }
+    },
+    "leads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["apollo_person_id", "first_name", "last_name", "title", "company", "company_domain", "country", "dedup_status", "flags"],
+        "properties": {
+          "apollo_person_id": { "type": "string", "description": "Apollo ID — нужен Enricher Agent" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string", "description": "Может быть частично скрыт Apollo" },
+          "title": { "type": "string" },
+          "company": { "type": "string" },
+          "company_domain": { "type": "string" },
+          "country": { "type": ["string", "null"] },
+          "seniority": { "type": ["string", "null"] },
+          "has_email": { "type": "boolean", "description": "Apollo показывает доступность, но не сам email" },
+          "linkedin_url": { "type": ["string", "null"] },
+          "dedup_status": { "type": "string", "enum": ["NEW", "ALREADY_IN_CRM", "ALREADY_IN_APOLLO"] },
+          "flags": { "type": "array", "items": { "type": "string", "enum": ["RETAIL", "INTERN", "UNRELATED", "EX-", "BROADENED_SEARCH"] } },
+          "search_broadened": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "search_metadata": {
+        "query": "iGaming Brazil",
+        "domains_searched": ["betano.com", "stake.com", "superbet.com"],
+        "domains_blocked": ["bet365.com"],
+        "timestamp": "2026-03-20T14:30:00Z",
+        "total_found": 12,
+        "new": 9,
+        "already_in_crm": 2,
+        "already_in_apollo": 1,
+        "flagged": 1
+      },
+      "leads": [
+        {
+          "apollo_person_id": "6789abc",
+          "first_name": "Carlos",
+          "last_name": "M***",
+          "title": "Media Buyer",
+          "company": "Betano",
+          "company_domain": "betano.com",
+          "country": "Brazil",
+          "seniority": "Manager",
+          "has_email": true,
+          "linkedin_url": null,
+          "dedup_status": "NEW",
+          "flags": [],
+          "search_broadened": false
+        },
+        {
+          "apollo_person_id": "1234xyz",
+          "first_name": "Ana",
+          "last_name": "S***",
+          "title": "Growth Marketing Manager",
+          "company": "Superbet",
+          "company_domain": "superbet.com",
+          "country": "Brazil",
+          "seniority": "Senior",
+          "has_email": false,
+          "linkedin_url": "https://linkedin.com/in/ana-s",
+          "dedup_status": "NEW",
+          "flags": ["BROADENED_SEARCH"],
+          "search_broadened": true
+        }
+      ]
+    }
+  ]
+}

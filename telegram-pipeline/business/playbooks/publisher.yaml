@@ -1,0 +1,55 @@
+role: "Publisher"
+name: "Publisher Monetization"
+
+subtypes:
+  A:
+    name: "Already monetizing"
+    description: "Has price list, telega.in, mentions rates — sells ads manually"
+    pain: "Unstable fill rate, time spent on sales instead of content, gaps between advertisers"
+    value_prop: "Automate ad sales: more fill rate, less manual work"
+    pitch_template: |
+      {name}, вижу что у вас {what_they_have} и вы уже продаёте рекламу.
+
+      Я {sender_name} из AdsGram.ai — Telegram-native рекламная сеть с 100,000+ ресурсов: каналы, боты, группы, TMA и т.д.
+
+      Ручной поиск рекламодателей — это время, которое можно тратить на контент. AdsGram автоматически подбирает рекламодателей под вашу аудиторию — CPM-модель, выплаты еженедельно.
+
+      Интересно посмотреть какие ставки получают каналы в {niche}?
+
+  B:
+    name: "Wants to start"
+    description: "Has channel/audience but no price — doesn't know earning potential"
+    pain: "Uncertainty — is my channel worth anything? Will ads scare subscribers?"
+    value_prop: "Zero entry barrier: connect and earn"
+    pitch_template: |
+      {name}, вижу что у вас {what_they_have}.
+
+      Я {sender_name} из AdsGram.ai — Telegram-native рекламная сеть с 100,000+ ресурсов: каналы, боты, группы, TMA и т.д.
+
+      Многие откладывают монетизацию, потому что кажется сложным. В AdsGram подключение занимает 5 минут — выбираете допустимые категории рекламы, всё остальное автоматически.
+
+      Хотите — покажу как выглядит процесс подключения? Займёт 2 минуты.
+
+  C:
+    name: "Dual (Publisher + Advertiser)"
+    description: "Owns channel AND wants to promote own product"
+    pain: "Two separate platforms and processes for monetization and promotion"
+    value_prop: "One platform: monetize channel AND run ads"
+    pitch_template: |
+      {name}, вижу что у вас и канал, и продукт для продвижения.
+
+      Я {sender_name} из AdsGram.ai — Telegram-native рекламная сеть с 100,000+ ресурсов: каналы, боты, группы, TMA и т.д.
+
+      Обычно это две разные платформы и два разных процесса. В AdsGram можно и монетизировать канал, и запускать рекламные кампании — одна платформа, один баланс.
+
+      Что из двух направлений для вас приоритетнее?
+
+default_subtype: "B"
+
+personalization_variables:
+  - name
+  - what_they_have
+  - current_monetization
+  - pain_point
+  - niche
+  - sender_name

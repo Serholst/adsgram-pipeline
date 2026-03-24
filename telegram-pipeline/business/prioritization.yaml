@@ -1,0 +1,42 @@
+# Unified lead prioritization — single source of truth for segment assignment.
+# Used by: pipeline/step2_prioritize.py
+# ALL lookup tables live here — zero hardcoded logic in Python.
+
+# --- Hard rules (evaluated before tier lookup, not configurable here) ---
+# adsgram_relevant == "irrelevant" → segment = Exclude
+# msg_role == "Trash" → segment = Trash
+
+# --- Fit × Intent → base tier ---
+tier_matrix:
+  high_high: Hot
+  high_medium: Warm
+  high_low: Cold
+  medium_high: Warm
+  medium_medium: Cold
+  medium_low: Defer
+  low_high: Defer
+  low_medium: Defer
+  low_low: Defer
+
+# --- Chat context promotion (steps up the tier ladder) ---
+chat_promotion:
+  ad_traffic: 1   # Defer→Cold, Cold→Warm, Warm→Hot, Hot→Hot
+  publisher: 1
+  agency: 0
+  general: 0
+
+# --- Advertiser override: (intent × readiness) → tier ---
+# For Advertiser / Publisher+Advertiser: final segment = max(promoted_tier, adv_tier)
+advertiser_tier_matrix:
+  direct_active: Hot
+  direct_exploring: Warm
+  direct_passive: Cold
+  indirect_active: Warm
+  indirect_exploring: Cold
+  indirect_passive: Defer
+  none_active: Defer
+  none_exploring: Defer
+  none_passive: Defer
+
+# --- GEO codes for LLM prompt context ---
+geo_codes: [RU, UA, KZ, BY, PL, RO, BG, TR, BR, IN, US, GB, DE, FR, AE, SG, ID, NG]

@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Enricher Agent Output",
+  "description": "Контракт: что возвращает Enricher Agent → принимает CRM Writer Agent",
+  "type": "object",
+  "required": ["enricher_metadata", "leads"],
+  "properties": {
+    "enricher_metadata": {
+      "type": "object",
+      "required": ["timestamp", "total_requested", "total_approved", "credits_spent", "credits_remaining", "emails_found", "emails_not_found"],
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "total_requested": { "type": "integer", "description": "Сколько лидов было в Bucket B" },
+        "total_approved": { "type": "integer", "description": "Сколько пользователь одобрил" },
+        "credits_spent": { "type": "integer" },
+        "credits_remaining": { "type": "integer" },
+        "credits_saved": { "type": "integer", "description": "Кредиты, сэкономленные через бесплатные пути" },
+        "emails_found": { "type": "integer" },
+        "emails_not_found": { "type": "integer" },
+        "catchall": { "type": "integer" },
+        "success_rate": { "type": "number", "description": "emails_found / total_approved" },
+        "recommendation": { "type": ["string", "null"], "description": "Рекомендация агента если результат слабый" }
+      }
+    },
+    "leads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["first_name", "last_name", "title", "company", "company_domain", "email", "email_status", "enrichment_flags"],
+        "properties": {
+          "apollo_person_id": { "type": ["string", "null"] },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "title": { "type": "string" },
+          "company": { "type": "string" },
+          "company_domain": { "type": "string" },
+          "country": { "type": ["string", "null"] },
+          "email": { "type": ["string", "null"] },
+          "email_status": { "type": ["string", "null"], "enum": ["verified", "catchall", "unverified", "unavailable", null] },
+          "phone": { "type": ["string", "null"] },
+          "linkedin_url": { "type": ["string", "null"] },
+          "contacts_from_qualifier": {
+            "type": "object",
+            "description": "Контакты, найденные Qualifier Agent — пробрасываются как есть"
+          },
+          "verification_status": {
+            "type": "string",
+            "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED", "ROLE_DISCREPANCY", "LEFT_COMPANY"],
+            "description": "Passthrough из Qualifier — нужен Orchestrator для сборки CRM Writer input"
+          },
+          "verification_note": { "type": "string", "description": "Passthrough из Qualifier — персонализационные сигналы" },
+          "enrichment_flags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "EMAIL_VERIFIED, EMAIL_CATCHALL, EMAIL_NOT_FOUND, EMAIL_UNVERIFIED, JOB_CHANGED, LEFT_COMPANY, FREE_PATH_USED"
+          },
+          "enrichment_note": { "type": "string" }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "enricher_metadata": {
+        "timestamp": "2026-03-20T15:30:00Z",
+        "total_requested": 4,
+        "total_approved": 4,
+        "credits_spent": 2,
+        "credits_remaining": 18,
+        "credits_saved": 2,
+        "emails_found": 3,
+        "emails_not_found": 1,
+        "catchall": 0,
+        "success_rate": 0.75,
+        "recommendation": null
+      },
+      "leads": [
+        {
+          "apollo_person_id": "1234xyz",
+          "first_name": "Ana",
+          "last_name": "Silva",
+          "title": "Growth Marketing Manager",
+          "company": "Superbet",
+          "company_domain": "superbet.com",
+          "country": "Brazil",
+          "email": "ana.silva@superbet.com",
+          "email_status": "verified",
+          "phone": "+55119876543",
+          "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
+          "contacts_from_qualifier": {
+            "twitter": "@anasilva_mkt",
+            "sources": ["LinkedIn", "Twitter"]
+          },
+          "verification_status": "PARTIALLY_VERIFIED",
+          "verification_note": "LinkedIn найден, роль совпадает, но email не найден бесплатно",
+          "enrichment_flags": ["EMAIL_VERIFIED", "FREE_PATH_USED"],
+          "enrichment_note": "Email найден через бесплатный re-query по паттерну домена"
+        },
+        {
+          "apollo_person_id": "5678def",
+          "first_name": "João",
+          "last_name": "Costa",
+          "title": "UA Manager",
+          "company": "Stake",
+          "company_domain": "stake.com",
+          "country": "Brazil",
+          "email": null,
+          "email_status": "unavailable",
+          "phone": null,
+          "linkedin_url": "https://linkedin.com/in/joao-costa",
+          "contacts_from_qualifier": {
+            "sources": ["LinkedIn"]
+          },
+          "verification_status": "VERIFIED",
+          "verification_note": "LinkedIn актуален, роль UA Manager подтверждена",
+          "enrichment_flags": ["EMAIL_NOT_FOUND"],
+          "enrichment_note": "Apollo вернул null, LinkedIn URL не помог. Домен stake.com — catchall не подтверждён."
+        }
+      ]
+    }
+  ]
+}

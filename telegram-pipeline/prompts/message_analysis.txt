@@ -1,0 +1,626 @@
+Analyze a lead from a Telegram BD chat. Determine their role, relevance to AdsGram, and classify their Fit (ICP match) and Intent (readiness to act).
+
+AdsGram is a Telegram advertising network connecting channel publishers (selling ad placements) with advertisers (buying traffic in Telegram channels). Agencies managing channel networks or KOLs are also relevant. Official partner of TON Foundation.
+
+Available niche categories: {{ niche_list }}
+Available GEO codes: {{ geo_list }}
+
+{% if icp_advertiser %}
+--- ICP ADVERTISER (reference for fit assessment) ---
+{{ icp_advertiser }}
+{% endif %}
+
+{% if icp_publisher %}
+--- ICP PUBLISHER (reference for fit assessment) ---
+{{ icp_publisher }}
+{% endif %}
+
+=== LEAD DATA ===
+
+Chat where message was found: {{ chat_name }}
+Profile bio: {{ profile_bio }}
+Message(s) (multiple from same person separated by "---"):
+---
+{{ message_text }}
+---
+
+=== OUTPUT FORMAT ===
+
+Respond with ONLY valid JSON:
+{
+  "msg_role": "<Publisher | Advertiser | Agency | Unclear | Trash>",
+  "adsgram_relevant": "<relevant | irrelevant | unclear>",
+  "fit_level": "<high | medium | low>",
+  "intent_level": "<high | medium | low>",
+  "fit_signals": ["<list of detected fit signals>"],
+  "intent_signals": ["<list of detected intent signals>"],
+  "chat_type": "<ad_traffic | publisher | agency | general>",
+  "msg_channel_handle": "<@handle or null>",
+  "msg_niche_signal": "<closest niche from available list, or null>",
+  "msg_geo_signal": "<GEO code from available list, or null>",
+  "adv_telegram_intent": "<direct | indirect | none | null>",
+  "adv_readiness": "<active | exploring | passive | null>",
+  "agency_type": "<kol_network | media_buying | dev_studio | general_marketing | unknown>",
+  "agency_scale": "<large | medium | small | unknown>",
+  "dev_studio_signals": ["<list of detected dev studio signals>"],
+  "fit_sub_signals": {
+    "vertical_name": "<конкретное название вертикали из текста, или null>",
+    "role_in_bio": "<конкретная роль из bio, или null>",
+    "has_telegram_presence": "<true | false>",
+    "has_anti_icp": "<true | false>",
+    "anti_icp_reason": "<причина, или null>",
+    "ownership_strength": "<explicit | moderate | weak | none>",
+    "has_commercial_activity": "<true | false>",
+    "niche_tier": "<1 | 2 | 3 | null>"
+  }
+}
+
+=====================================================================
+STEP 0 — IMMEDIATE SKIP
+=====================================================================
+
+Before any analysis, check if the message matches a SKIP trigger.
+If it does — stop, output Trash/irrelevant, do not proceed further.
+
+SKIP triggers (person is NOT a potential publisher, advertiser, or agency):
+- Airdrop partnerships, token distribution partnerships
+- Exchange listing requests (CEX/DEX listing)
+- AMA / X Space / Twitter Space / event speaker requests
+- Fundraising, VC pitches, investment requests, seeking investors
+- Revenue share proposals WITHOUT interest in buying or selling ad traffic
+- One-time freelance services (design, development, copywriting, translations)
+- Scam signals (DDOS, CC dumps, illegal services, money laundering)
+- Recruiting, job offers, job seeking ("ищу работу", "hiring", "вакансия")
+- Traffic arbitrageurs working OUTSIDE Telegram (Google Ads, Facebook Ads, SEO traffic)
+- Event organizers NOT promoting a product (conference invitations, meetup announcements)
+- Consulting requests (asking for consulting, not ad placements)
+- Spam, gibberish, automated messages, fewer than 5 meaningful words
+
+If SKIP triggered → output:
+  msg_role: "Trash", adsgram_relevant: "irrelevant", fit_level: "low", intent_level: "low",
+  fit_signals: [], intent_signals: [], chat_type: "general", all other fields: null,
+  fit_sub_signals: all false/none/null.
+
+=====================================================================
+STEP 1 — CHAT CONTEXT
+=====================================================================
+
+Classify the chat by its primary topic:
+
+"ad_traffic": chat is about buying/selling Telegram ads or traffic.
+  Keywords in chat name: реклама, трафик, медиабаинг, ad buying, traffic, ads, ad network.
+
+"publisher": chat is for Telegram channel owners, publishers, bloggers, monetization.
+  Keywords in chat name: паблишеры, каналы, монетизация, publishers, channel owners, creator.
+
+"agency": chat is for media buyers, agencies, KOL managers, affiliate teams.
+  Keywords in chat name: агентства, байеры, affiliate, agency, media buying, KOL.
+
+"general": crypto community, Web3, BD networking, mixed topic, unclear, or chat name empty.
+
+Chat context rule: a message in an "ad_traffic" or "publisher" chat carries a presumption
+of relevance. "Looking for partners" in "Telegram Ad Buyers" is likely an Advertiser.
+Same message in a "general" chat is Unclear.
+
+=====================================================================
+STEP 2 — MSG_ROLE
+=====================================================================
+
+Determine role based on message text and bio.
+
+ADVERTISER signals (wants to BUY traffic or promote something):
+- Message mentions: buying ads, traffic, users, installs, leads, promotion
+- Message mentions problems with Google/Meta/Facebook ads (blocked, banned, restricted)
+- Bio contains: Media Buyer, Affiliate Manager, CMO, Growth Lead, Head of Marketing,
+  Performance Marketing, маркетолог, байер
+- Message describes a product/project that needs promotion or user acquisition
+- IMPORTANT: if someone promotes their project (even passively), they are a potential
+  Advertiser — mark as "relevant"
+
+PUBLISHER signals (wants to SELL ad space or monetize their channel):
+- Message mentions: monetizing their channel, selling ad slots, looking for advertisers,
+  ad pricing, "для рекламы"
+- Bio contains: channel owner, admin @..., blogger, content creator,
+  медиаменеджер, владелец канала, subscriber count
+- Message or bio contains @channel_handle or t.me/link with ownership context
+
+AGENCY signals (manages multiple channels or clients):
+- Message or bio mentions: agency, "мы управляем", "we manage clients",
+  "наши клиенты", managing multiple channels/KOLs/projects
+- Bio mentions: медиа-агентство, KOL-менеджер, управление каналами,
+  media buying agency, traffic team
+
+UNCLEAR: some signals present but role is ambiguous.
+
+Trash: caught by STEP 0 skip check.
+
+=====================================================================
+STEP 3 — ADSGRAM_RELEVANT
+=====================================================================
+
+- "relevant": could be a publisher, advertiser, or agency in AdsGram ecosystem.
+  If someone promotes their project (even passively), they are a potential advertiser
+  — mark "relevant". Early-stage projects that COULD need Telegram advertising are "relevant".
+
+- "irrelevant": fundamentally outside AdsGram ecosystem:
+  * Traffic arbitrageurs seeking affiliate offers, Google Ads, or selling non-TG traffic
+  * Solo developers offering coding services (not buying/selling ads)
+  * Job seekers or recruiters
+  * Event organizers not promoting a product
+  * VC/funds seeking investment
+  * Consulting requests (not ad placements)
+  * Scam/suspicious projects
+  * Random unrelated chat messages
+  * Anti-ICP advertisers (see fit section): e-commerce of physical goods, FMCG,
+    SaaS for HR/recruiting, banks, insurance, government with strict compliance
+
+- "unclear": truly impossible to determine
+
+=====================================================================
+STEP 4 — FIT_LEVEL (ICP match)
+=====================================================================
+
+Fit measures WHO this person is — their profile match to AdsGram's ideal customer.
+Independent of what they want right now.
+
+Evaluate using: message content, bio, role/title, vertical, Telegram presence.
+Use ICP documents above as reference when available.
+
+--- FIT FOR ADVERTISER ---
+
+Primary axis — Vertical match (most important):
+  Priority verticals (blocked on Google/Meta, TG is primary channel):
+    iGaming / Gambling / Betting / Casino / Lottery
+    Forex / Binary options / Copy trading / Brokers
+    Crypto / TON / Web3 / DeFi / NFT / GameFi
+    Dating / 18+ / AI-girlfriend / adult content
+    Finance / Trading / Investment platforms / Staking
+  Viable verticals (can use TG ads but have alternatives):
+    Entertainment apps, News projects, Lifestyle digital products
+  Non-target verticals (Anti-ICP → fit = "low", adsgram_relevant = "irrelevant"):
+    E-commerce of physical goods, FMCG brands
+    SaaS for HR/recruiting, corporate tools
+    Banks, insurance, government organizations with strict compliance
+
+Secondary axis — Contact role (from bio only):
+  Raises fit: Head of Marketing, CMO, Affiliate Manager, Media Buyer, Growth Lead,
+    Performance Marketer, BD Manager, Founder/CEO (decision-makers with budget authority)
+  Neutral: unclear role, no bio
+  Lowers fit: junior roles without budget authority (intern, assistant, community manager)
+
+Supporting signal — Telegram presence:
+  Raises fit: has own TG channel, bot, or Mini App (mentioned in message or bio)
+
+Supporting signal — Traffic experience:
+  Raises fit: understands CPC/CPM, mentions paid advertising experience, media buying
+
+Combine:
+  "high": priority vertical + decision-maker role or TG presence.
+          Priority vertical alone is enough if vertical signal is strong.
+  "medium": non-priority but viable vertical, OR priority vertical with very weak context,
+            OR crypto project that could buy ads but unclear scale.
+            No bio → cap at "medium" even with good vertical.
+  "low": no identifiable product, non-target vertical, or Anti-ICP triggered.
+
+--- FIT FOR PUBLISHER ---
+
+Evaluated ONLY from message text and bio. No channel data available at this stage.
+
+Primary axis — Ownership signal:
+  Strong: bio explicitly mentions channel (@channel, "мой канал", "admin of",
+    subscriber count stated), or message clearly describes their own channel
+  Weak: vague "у меня есть канал" without details
+  None: no ownership signal
+
+Secondary axis — Niche signal (from message/bio context):
+  Priority niches (high advertiser demand): crypto, finance, gambling-adjacent,
+    entertainment/memes (male 18-35), news, dating/18+
+  Neutral: topic unclear
+  Low-demand: B2B-only content, very narrow professional niche
+
+Supporting signal — Commercial activity (from message/bio):
+  Raises fit: mentions selling ads, has ad pricing, "для рекламы" in bio,
+    looking for advertisers, uses monetization platforms (Telega.in etc.)
+
+Combine:
+  "high": strong ownership signal + priority niche or commercial activity
+  "medium": some ownership signal but niche unclear, OR priority niche but weak ownership
+  "low": no ownership signal, or niche with zero advertiser demand
+
+--- FIT FOR AGENCY ---
+
+Evaluated ONLY from message text and bio. No client/channel portfolio data available.
+
+Primary axis — Scale signal:
+  Raises fit: mentions number of channels/clients, network size, team
+  Neutral: agency-like language but no specifics
+
+Secondary axis — Activity type:
+  Raises fit: KOL management for TG, media buying for TG channels, channel monetization
+  Neutral: general digital marketing agency
+  Lowers fit: focused on non-TG platforms only
+
+Combine:
+  "high": clear agency with TG-relevant scale (multiple channels/clients mentioned)
+  "medium": agency signals present but scale or TG-focus unclear
+  "low": vague agency mention, no specifics, or non-TG marketing consulting
+
+=====================================================================
+AGENCY TYPE & SCALE (optional enrichment)
+=====================================================================
+
+Fill these fields ONLY if msg_role = "Agency" OR dev_studio_signals are detected.
+Information may be incomplete — that's OK. If no data available, use "unknown".
+
+agency_type (determined from message and bio):
+- "kol_network": manages a network of Telegram channels, KOLs, creator network
+- "media_buying": buys ads for clients, traffic team, mentions CPM/CPC
+- "dev_studio": builds mini-apps, bots, Web3 products, technical team
+- "general_marketing": digital marketing, branding, consulting — not TG-specific
+- "unknown": agency signals present but type unclear
+
+agency_scale (determined from message and bio):
+- "large": explicitly mentions 20+ channels/clients, or 5M+ total reach, or multiple teams
+- "medium": mentions 5-20 channels/clients, or implies having a team
+- "small": 1-5 channels/clients, solo operator with partners
+- "unknown": agency signals present but scale unclear
+
+dev_studio_signals (fill ALWAYS, even if msg_role is NOT "Agency"):
+List of detected signals from message and bio indicating development activity:
+  build_mini_apps, bot_development, web_app_creator, twa_experience,
+  game_dev, blockchain_dev, sdk_provider, product_team, cto_title,
+  engineering_lead, developer_team, mini_app_studio, telegram_app_dev
+
+If no signals detected → empty array [].
+
+=====================================================================
+STEP 5 — INTENT_LEVEL (readiness to act)
+=====================================================================
+
+CRITICAL: intent_level is evaluated ONLY from the MESSAGE TEXT.
+Bio and profile are NOT used for intent. Bio tells you who someone IS (fit),
+the message tells you what they WANT RIGHT NOW (intent).
+
+--- INTENT FOR ADVERTISER ---
+
+"high": explicit traffic/ad request WITH specific product AND (timeline OR budget OR platform pain).
+  Examples: "ищу каналы для нашего крипто-приложения, бюджет $5000",
+  "need TG ads for our iGaming offer launching in March",
+  "заблокировали в Google, срочно нужен TG-трафик" (platform pain = urgency).
+
+"medium": explicit traffic/ad request with product but NO timeline/budget/urgency.
+  Examples: "need Telegram traffic for our DeFi project",
+  "ищем каналы для продвижения", "хотим попробовать рекламу в ТГ".
+
+"low": general interest or no buying signal.
+  Examples: "building a GameFi ecosystem, would love to connect",
+  passive project promotion, networking.
+
+--- INTENT FOR PUBLISHER ---
+
+"high": explicitly looking for advertisers or ad network for their channel.
+  Examples: "ищу рекламодателей", "looking for ad network",
+  "хочу подключить монетизацию", "DM me with rates".
+
+"medium": mentions channel income or dissatisfaction with current monetization.
+  Examples: "мало рекламодателей", "хочу больше зарабатывать на канале".
+
+"low": no monetization or advertiser-seeking signal in the message.
+
+--- INTENT FOR AGENCY ---
+
+"high": actively looking for ad network partnership, offering channel inventory,
+  or seeking clients to place traffic for. Explicit cooperation request.
+
+"medium": mentions interest in scaling or exploring new platforms/networks.
+
+"low": just describing their business, no action signal.
+
+Chat context effect on intent:
+- Same message in "ad_traffic" chat → intent is likely one level higher than in "general" chat.
+- "looking for partners" in "Telegram Ad Buyers" → medium intent (ad context presumption).
+- "looking for partners" in "Crypto General" → low intent (no ad presumption).
+
+=====================================================================
+SIGNAL TAGS
+=====================================================================
+
+fit_signals — specific evidence supporting fit_level. Use these tags:
+
+- priority_vertical:{name} — iGaming, Forex, Crypto, Dating, GameFi, Finance
+- viable_vertical:{name} — Entertainment, News, Lifestyle
+- decision_maker:{role} — CMO, Media_Buyer, Growth_Lead, Affiliate_Manager, Founder
+- telegram_presence — has TG channel, bot, or mini-app
+- audience_size:{hint} — "100k+", "2M followers"
+- commercial_activity — price list, ad contact, telega.in
+- priority_niche_channel — channel in high-demand niche
+- kol_network:{scale} — manages multiple KOLs/channels
+- traffic_experience — mentions CPC/CPM, media buying, paid advertising
+- neutral_vertical — lifestyle, general, non-priority
+- anti_icp:{reason} — physical_ecommerce, FMCG, SaaS_HR, compliance_heavy
+- no_channel_evidence
+- no_role_signals
+
+intent_signals — specific evidence from MESSAGE TEXT ONLY. Use these tags:
+
+- explicit_ad_request — directly asks for placements/channels/KOLs/ad network
+- budget_mentioned:{hint} — "$5000/mo", "от 500$"
+- timeline_mentioned:{hint} — "next month", "Q2 launch"
+- platform_pain — "banned from Meta", "Google rejected"
+- action_language — "ищу", "нужны", "DM me", "готовы обсудить"
+- general_growth_interest — wants promotion but no specifics
+- exploring_monetization — dissatisfied with current monetization
+- networking_only — "happy to connect", "let's chat"
+- passive_announcement — just announcing project
+- no_intent_signals
+
+agency/dev_studio enrichment tags (use in fit_signals when relevant):
+- agency_type:{type} — kol_network, media_buying, dev_studio, general_marketing
+- agency_scale:{hint} — large:50_channels, medium:10_clients, small:2_channels
+- dev_studio_signal:{keyword} — build_mini_apps, bot_development, sdk_provider, etc.
+
+=====================================================================
+FIT SUB-SIGNALS (structured evidence for scoring)
+=====================================================================
+
+fit_sub_signals is a structured JSON object used for deterministic fit scoring.
+Fill ALL fields — they are scored downstream by weights from YAML config.
+
+For ALL roles:
+- vertical_name: the specific vertical/niche of the lead's product or channel.
+  Use the EXACT name from the message or bio. Examples: "iGaming", "Crypto", "Forex",
+  "Dating", "Finance", "Entertainment", "News", "Lifestyle".
+  If multiple verticals — pick the PRIMARY one.
+  If unclear — null.
+
+- role_in_bio: the specific job title or role from bio text.
+  Use the EXACT title. Examples: "Media_Buyer", "CMO", "Founder", "Growth_Lead",
+  "Affiliate_Manager", "Head_of_Marketing", "CEO", "Performance_Marketer".
+  If no role in bio or bio is empty — null.
+
+- has_telegram_presence: true if the lead mentions their OWN Telegram channel,
+  bot, or Mini App in message or bio. false otherwise.
+
+- has_anti_icp: true if the lead matches any Anti-ICP signal
+  (physical e-commerce, FMCG, SaaS HR, government, insurance, compliance-heavy bank,
+  or explicit budget under $100 with no growth signal). false otherwise.
+
+- anti_icp_reason: if has_anti_icp is true — the specific reason (e.g., "physical_ecommerce",
+  "FMCG", "compliance_heavy"). If false — null.
+
+For PUBLISHER role only (null for other roles):
+- ownership_strength: how strong is the evidence that they OWN a channel?
+  "explicit": bio mentions @channel_name, "owner of", "admin of", subscriber count stated
+  "moderate": message describes "my channel", "my audience", "my subscribers"
+  "weak": general "I have a channel" without details
+  "none": no ownership signal
+
+- has_commercial_activity: true if bio or message mentions selling ads,
+  looking for advertisers, ad pricing, monetization network, "для рекламы". false otherwise.
+
+- niche_tier: tier of the publisher's channel niche from niches.yaml.
+  1 = Crypto/Finance/Gambling (high advertiser demand)
+  2 = Entertainment/News/Dating (medium demand)
+  3 = Lifestyle (low demand)
+  null = niche unclear
+
+For NON-PUBLISHER roles: ownership_strength = "none", has_commercial_activity = false,
+niche_tier = null.
+
+=====================================================================
+ADVERTISER-SPECIFIC FIELDS
+=====================================================================
+
+If msg_role is "Advertiser", evaluate these. For all other roles, set both to null.
+
+adv_telegram_intent:
+- "direct": explicitly looking for Telegram channel placements, KOL promotions
+  in Telegram, or buying Telegram traffic. Keywords: "ищу каналы", "размещение в ТГ",
+  "Telegram KOL", "buy ads in channels"
+- "indirect": looking for marketing/promotion that COULD include Telegram but
+  doesn't specify it. "looking for KOLs", "need promotion", "want to scale"
+- "none": no advertising intent — promoting own project, networking, seeking investors
+
+adv_readiness:
+- "active": clear immediate intent — present tense, budget mentioned, asks for contacts NOW.
+  Keywords: "ищу", "нужны каналы", "бюджет", "готовы обсудить", "DM me with rates"
+- "exploring": interested but not ready — building connections, early-stage,
+  "would love to connect", "let's chat sometime"
+- "passive": no buying intent — just announcing, networking, attending events
+
+=====================================================================
+HANDLE EXTRACTION
+=====================================================================
+
+Only extract if explicitly written (@channelname or t.me/channelname).
+Never guess or infer from context.
+
+=====================================================================
+EXAMPLES
+=====================================================================
+
+Chat: "Telegram Ads Buyers"
+Bio: "Media Buyer | iGaming | @bestcasino_channel"
+Message: "Ищу каналы для размещения, бюджет от 5000$ в месяц. Казино-вертикаль, RU-гео."
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "high", "fit_signals": ["priority_vertical:iGaming", "decision_maker:Media_Buyer", "telegram_presence"], "intent_signals": ["explicit_ad_request", "budget_mentioned:5000$/mo", "action_language"], "chat_type": "ad_traffic", "msg_channel_handle": null, "msg_niche_signal": "Gambling/Betting", "msg_geo_signal": "RU", "adv_telegram_intent": "direct", "adv_readiness": "active", "fit_sub_signals": {"vertical_name": "iGaming", "role_in_bio": "Media_Buyer", "has_telegram_presence": true, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Perfect ICP: priority vertical + Media Buyer + explicit TG request + budget + ad chat
+
+Chat: "Web3 BD & Networking"
+Bio: ""
+Message: "We're creating a transparent GameFi ecosystem... would love to connect at Token2049"
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "medium", "intent_level": "low", "fit_signals": ["priority_vertical:GameFi", "no_role_signals"], "intent_signals": ["networking_only", "passive_announcement"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": "none", "adv_readiness": "passive", "fit_sub_signals": {"vertical_name": "GameFi", "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// GameFi = priority vertical but no bio → medium fit. Just networking → low intent.
+
+Chat: "Crypto General Chat"
+Bio: "Founder & CEO at DeFi Protocol X | 50k TG community"
+Message: "Hey everyone, exploring promotion options for our protocol launch next month"
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "medium", "fit_signals": ["priority_vertical:Crypto", "decision_maker:Founder", "telegram_presence", "audience_size:50k"], "intent_signals": ["general_growth_interest", "timeline_mentioned:next_month"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": "indirect", "adv_readiness": "exploring", "fit_sub_signals": {"vertical_name": "Crypto", "role_in_bio": "Founder", "has_telegram_presence": true, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Bio: Founder + Crypto + TG community = high fit. Message: timeline but no TG-specific request → medium intent.
+
+Chat: "Publisher Monetization RU"
+Bio: "Админ @crypto_signals_ru | 50к подписчиков"
+Message: "Ищу рекламодателей, ставка 5000₽ за пост"
+→ {"msg_role": "Publisher", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "high", "fit_signals": ["priority_niche_channel", "audience_size:50k", "commercial_activity"], "intent_signals": ["explicit_ad_request", "budget_mentioned:5000₽/post", "action_language"], "chat_type": "publisher", "msg_channel_handle": "@crypto_signals_ru", "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": "RU", "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": "Crypto", "role_in_bio": null, "has_telegram_presence": true, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "explicit", "has_commercial_activity": true, "niche_tier": 1}}
+// Publisher: priority niche + audience + commercial activity + publisher chat
+
+Chat: "Web3 Growth"
+Bio: "KOL Manager | 15 channels | 2M+ total reach"
+Message: "who needs real Tg and X KOLs that deliver massively for promotion?"
+→ {"msg_role": "Agency", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "high", "fit_signals": ["kol_network:15_channels_2M_reach", "telegram_presence"], "intent_signals": ["explicit_ad_request", "action_language"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": true, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Agency with TG channel network + scale in bio, actively offering
+
+Chat: "Crypto General Chat"
+Bio: "Seasoned KOL and social media marketer"
+Message: "Drop me a DM if you need promotion"
+→ {"msg_role": "Agency", "adsgram_relevant": "relevant", "fit_level": "medium", "intent_level": "medium", "fit_signals": ["kol_network:unknown_scale", "no_channel_evidence"], "intent_signals": ["general_growth_interest", "action_language"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// KOL but no scale data, no TG specifics, general chat
+
+Chat: "Telegram Traffic"
+Bio: ""
+Message: "Есть афы по нейронкам ? Или контакты таких афов ? Траф - гугл адс"
+→ {"msg_role": "Trash", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "low", "fit_signals": [], "intent_signals": [], "chat_type": "ad_traffic", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// SKIP: traffic arbitrageur — Google Ads, not Telegram. Caught by STEP 0.
+
+Chat: "BD Networking"
+Bio: "Blockchain engineer, 8 years experience"
+Message: "I'm a blockchain engineer with 8 years of experience and I'd like to collaborate"
+→ {"msg_role": "Unclear", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "low", "fit_signals": ["no_role_signals", "no_channel_evidence"], "intent_signals": ["networking_only"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Solo developer offering services — not buying or selling ads
+
+Chat: "Web3 BD"
+Bio: "I'm working at Brickken, exploring tokenization"
+Message: "Hey everyone, I'm working at Brickken, exploring tokenization. Happy to connect"
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "medium", "intent_level": "low", "fit_signals": ["priority_vertical:Crypto", "no_role_signals"], "intent_signals": ["networking_only"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": "none", "adv_readiness": "exploring", "fit_sub_signals": {"vertical_name": "Crypto", "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Crypto vertical (medium fit — no bio role), just networking (low intent)
+
+Chat: "Telegram Ad Buyers"
+Bio: ""
+Message: "Looking for growth partners"
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "low", "intent_level": "medium", "fit_signals": ["no_role_signals", "no_channel_evidence"], "intent_signals": ["general_growth_interest"], "chat_type": "ad_traffic", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": "indirect", "adv_readiness": "exploring", "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Vague message, no bio → low fit. But ad_traffic chat boosts intent to medium.
+
+Chat: ""
+Bio: "VC Partner at HongShan"
+Message: "Hello! HongShan connects innovative Web3 projects with strategic capital"
+→ {"msg_role": "Trash", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "low", "fit_signals": [], "intent_signals": [], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// SKIP: VC fund — fundraising/investment, caught by STEP 0.
+
+Chat: "Crypto KOL Network"
+Bio: ""
+Message: "I have a telegram channel with over 100k+ subs"
+→ {"msg_role": "Publisher", "adsgram_relevant": "relevant", "fit_level": "medium", "intent_level": "high", "fit_signals": ["audience_size:100k+", "telegram_presence", "no_channel_evidence"], "intent_signals": ["explicit_ad_request", "action_language"], "chat_type": "agency", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": true, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "moderate", "has_commercial_activity": false, "niche_tier": null}}
+// Audience size stated but niche unknown → medium fit. Offering channel → high intent.
+
+Chat: "Web3 Marketing"
+Bio: ""
+Message: "We execute full go-to-market and token launch for pre-TGE projects"
+→ {"msg_role": "Agency", "adsgram_relevant": "relevant", "fit_level": "low", "intent_level": "low", "fit_signals": ["no_channel_evidence", "neutral_vertical"], "intent_signals": ["passive_announcement"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Marketing consulting, not channel-based TG advertising — low fit for AdsGram
+
+Chat: "Telegram Ads Buyers"
+Bio: "CMO @ DeFi Lending Protocol"
+Message: "Anyone know good ad networks for crypto projects? Meta keeps rejecting our campaigns"
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "high", "fit_signals": ["priority_vertical:Crypto", "decision_maker:CMO"], "intent_signals": ["explicit_ad_request", "platform_pain", "action_language"], "chat_type": "ad_traffic", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": "direct", "adv_readiness": "active", "fit_sub_signals": {"vertical_name": "Crypto", "role_in_bio": "CMO", "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// CMO + crypto + asks for ad networks + Meta pain + ad chat = perfect lead
+
+Chat: "iGaming BD"
+Bio: "Affiliate Manager @ CasinoX"
+Message: "ищем каналы в ТГ для размещения, готовы обсудить условия"
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "high", "fit_signals": ["priority_vertical:iGaming", "decision_maker:Affiliate_Manager"], "intent_signals": ["explicit_ad_request", "action_language"], "chat_type": "ad_traffic", "msg_channel_handle": null, "msg_niche_signal": "Gambling/Betting", "msg_geo_signal": null, "adv_telegram_intent": "direct", "adv_readiness": "active", "fit_sub_signals": {"vertical_name": "iGaming", "role_in_bio": "Affiliate_Manager", "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Perfect: iGaming + Affiliate Manager + explicit TG request + ready to discuss
+
+Chat: ""
+Bio: ""
+Message: "gm gm 🔥🚀"
+→ {"msg_role": "Trash", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "low", "fit_signals": [], "intent_signals": [], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// SKIP: fewer than 5 meaningful words
+
+Chat: ""
+Bio: ""
+Message: "Looking for a Web3 headhunter; I have hiring needs."
+→ {"msg_role": "Trash", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "low", "fit_signals": [], "intent_signals": [], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// SKIP: recruiting/hiring — caught by STEP 0
+
+Chat: "Telegram Ads Buyers"
+Bio: "Growth Lead @ ForexBroker.io"
+Message: "looking for partners"
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "medium", "fit_signals": ["priority_vertical:Forex", "decision_maker:Growth_Lead"], "intent_signals": ["general_growth_interest"], "chat_type": "ad_traffic", "msg_channel_handle": null, "msg_niche_signal": "Finance/Trading", "msg_geo_signal": null, "adv_telegram_intent": "indirect", "adv_readiness": "exploring", "fit_sub_signals": {"vertical_name": "Forex", "role_in_bio": "Growth_Lead", "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Bio: Growth Lead + Forex = high fit. Message vague but ad chat boosts intent to medium.
+
+Chat: "Web3 BD"
+Bio: "KOL from Georgia, crypto trader"
+Message: "I have crypto trading channel, DM for collaboration"
+→ {"msg_role": "Publisher", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "high", "fit_signals": ["priority_niche_channel", "telegram_presence"], "intent_signals": ["explicit_ad_request", "action_language"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": "Crypto", "role_in_bio": null, "has_telegram_presence": true, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "moderate", "has_commercial_activity": false, "niche_tier": 1}}
+// Publisher: crypto niche channel + offering collaboration
+
+Chat: ""
+Bio: ""
+Message: "Появился трафик на iGaming, RU-гео, интересно было бы поработать"
+→ {"msg_role": "Trash", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "low", "fit_signals": [], "intent_signals": [], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Gambling/Betting", "msg_geo_signal": "RU", "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// SKIP: traffic arbitrageur — selling own traffic from outside TG, not buying TG placements
+
+Chat: "Web3 Growth"
+Bio: ""
+Message: "We're launching a new DeFi product and need to promote it in Telegram channels. Budget $5000/month for ad placements."
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "medium", "intent_level": "high", "fit_signals": ["priority_vertical:Crypto", "no_role_signals"], "intent_signals": ["explicit_ad_request", "budget_mentioned:$5000/mo", "timeline_mentioned:launching", "action_language"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": "direct", "adv_readiness": "active", "fit_sub_signals": {"vertical_name": "Crypto", "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// No bio → fit capped at medium (vertical yes, role unknown). Intent very high — explicit TG + budget.
+
+Chat: "BD Networking"
+Bio: "Управляю сетью из 15 каналов, суммарно 2М подписчиков"
+Message: "Предлагаем пакетные размещения для брендов."
+→ {"msg_role": "Agency", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "high", "fit_signals": ["kol_network:15_channels_2M_subs", "telegram_presence", "commercial_activity"], "intent_signals": ["explicit_ad_request", "action_language"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": "RU", "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": true, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Bio: massive TG network. High fit + high intent from content alone.
+
+Chat: "Crypto General Chat"
+Bio: "I'm a kol manager with connections"
+Message: "DM me if you need KOL promotion"
+→ {"msg_role": "Agency", "adsgram_relevant": "relevant", "fit_level": "medium", "intent_level": "medium", "fit_signals": ["kol_network:unknown_scale"], "intent_signals": ["general_growth_interest", "action_language"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// KOL manager but no scale or TG specifics → medium fit. Offering → medium intent.
+
+Chat: ""
+Bio: ""
+Message: "Привет! Хотим обсудить консалтинг по инфлюенсу для беттинга"
+→ {"msg_role": "Trash", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "low", "fit_signals": [], "intent_signals": [], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Gambling/Betting", "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// SKIP: consulting request — not buying ad placements
+
+Chat: ""
+Bio: "Head of Marketing @ LuckySpin Casino"
+Message: "Наш онлайн-казино ищет каналы для размещения в СНГ. Бюджет 3000$ на тест."
+→ {"msg_role": "Advertiser", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "high", "fit_signals": ["priority_vertical:iGaming", "decision_maker:Head_of_Marketing", "traffic_experience"], "intent_signals": ["explicit_ad_request", "budget_mentioned:$3000", "action_language"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Gambling/Betting", "msg_geo_signal": "RU", "adv_telegram_intent": "direct", "adv_readiness": "active", "fit_sub_signals": {"vertical_name": "iGaming", "role_in_bio": "Head_of_Marketing", "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// iGaming + Head of Marketing + explicit TG request + budget = perfect
+
+Chat: ""
+Bio: ""
+Message: "Продаём органическую косметику, хотим попробовать рекламу в Телеграме"
+→ {"msg_role": "Advertiser", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "medium", "fit_signals": ["anti_icp:physical_ecommerce"], "intent_signals": ["general_growth_interest"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": "RU", "adv_telegram_intent": "indirect", "adv_readiness": "exploring", "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": true, "anti_icp_reason": "physical_ecommerce", "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Anti-ICP: physical e-commerce → fit = low, irrelevant. But message shows some intent.
+
+Chat: "Web3 BD"
+Bio: ""
+Message: "Looking for AMA speakers for our upcoming X Space about DeFi trends"
+→ {"msg_role": "Trash", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "low", "fit_signals": [], "intent_signals": [], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// SKIP: AMA/X Space speaker request — not buying or selling ads
+
+Chat: "Crypto Ads"
+Bio: "Partnership manager @ TokenSwap"
+Message: "We want to do an airdrop partnership, rev share model"
+→ {"msg_role": "Trash", "adsgram_relevant": "irrelevant", "fit_level": "low", "intent_level": "low", "fit_signals": [], "intent_signals": [], "chat_type": "ad_traffic", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// SKIP: airdrop partnership + rev share without traffic interest
+
+Chat: "Web3 BD"
+Bio: "CTO @ MiniApp Studio | Building Telegram mini-apps for brands"
+Message: "We build mini-apps and bots for Telegram. Looking for partnerships."
+→ {"msg_role": "Agency", "adsgram_relevant": "relevant", "fit_level": "medium", "intent_level": "medium", "fit_signals": ["dev_studio_signal:build_mini_apps", "dev_studio_signal:bot_development", "telegram_presence"], "intent_signals": ["general_growth_interest", "action_language"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "agency_type": "dev_studio", "agency_scale": "unknown", "dev_studio_signals": ["build_mini_apps", "bot_development", "telegram_app_dev"], "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": true, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Dev studio masking as Agency — agency_type reveals real type
+
+Chat: "Crypto KOL Network"
+Bio: "Managing 30+ crypto channels, 5M+ subscribers total"
+Message: "Предлагаем размещения в наших каналах, есть свободные слоты"
+→ {"msg_role": "Agency", "adsgram_relevant": "relevant", "fit_level": "high", "intent_level": "high", "fit_signals": ["kol_network:30_channels_5M_subs", "telegram_presence", "commercial_activity"], "intent_signals": ["explicit_ad_request", "action_language"], "chat_type": "agency", "msg_channel_handle": null, "msg_niche_signal": "Crypto/TON/Web3", "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "agency_type": "kol_network", "agency_scale": "large", "dev_studio_signals": [], "fit_sub_signals": {"vertical_name": "Crypto", "role_in_bio": null, "has_telegram_presence": true, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Clear KOL manager with scale — no review needed
+
+Chat: "BD Networking"
+Bio: "Digital marketing"
+Message: "We help projects with marketing and growth"
+→ {"msg_role": "Agency", "adsgram_relevant": "relevant", "fit_level": "low", "intent_level": "low", "fit_signals": ["no_channel_evidence", "neutral_vertical"], "intent_signals": ["passive_announcement"], "chat_type": "general", "msg_channel_handle": null, "msg_niche_signal": null, "msg_geo_signal": null, "adv_telegram_intent": null, "adv_readiness": null, "agency_type": "unknown", "agency_scale": "unknown", "dev_studio_signals": [], "fit_sub_signals": {"vertical_name": null, "role_in_bio": null, "has_telegram_presence": false, "has_anti_icp": false, "anti_icp_reason": null, "ownership_strength": "none", "has_commercial_activity": false, "niche_tier": null}}
+// Type and scale unclear — unknown

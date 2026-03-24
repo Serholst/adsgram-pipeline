@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Qualifier Agent Output",
+  "description": "Контракт: что возвращает Qualifier Agent → принимают Enricher Agent (Bucket B) и CRM Writer Agent (Bucket A + SKIP)",
+  "type": "object",
+  "required": ["qualifier_metadata", "leads"],
+  "properties": {
+    "qualifier_metadata": {
+      "type": "object",
+      "required": ["timestamp", "total_processed", "verified", "partially_verified", "not_verified", "skipped", "new_leads_discovered", "bucket_a", "bucket_b"],
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "total_processed": { "type": "integer" },
+        "verified": { "type": "integer" },
+        "partially_verified": { "type": "integer" },
+        "not_verified": { "type": "integer" },
+        "skipped": { "type": "integer" },
+        "new_leads_discovered": { "type": "integer", "description": "Лиды, найденные через веб (Step 3c)" },
+        "bucket_a": { "type": "integer" },
+        "bucket_b": { "type": "integer" }
+      }
+    },
+    "leads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["first_name", "last_name", "title", "company", "company_domain", "source", "verification_status", "contacts_found", "bucket", "dedup_status"],
+        "properties": {
+          "apollo_person_id": { "type": ["string", "null"], "description": "null для лидов, найденных через веб" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "title": { "type": "string" },
+          "company": { "type": "string" },
+          "company_domain": { "type": "string" },
+          "country": { "type": ["string", "null"] },
+          "seniority": { "type": ["string", "null"] },
+          "source": { "type": "string", "enum": ["APOLLO", "WEB"] },
+          "verification_status": {
+            "type": "string",
+            "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED", "ROLE_DISCREPANCY", "LEFT_COMPANY", "SKIP"]
+          },
+          "verification_note": { "type": "string", "description": "Краткое пояснение результата верификации" },
+          "contacts_found": {
+            "type": "object",
+            "properties": {
+              "linkedin_url": { "type": ["string", "null"] },
+              "twitter": { "type": ["string", "null"] },
+              "email_pattern": { "type": ["string", "null"], "description": "Email, выведенный из ZoomInfo/RocketReach" },
+              "whatsapp": { "type": ["string", "null"] },
+              "conference_appearances": { "type": "array", "items": { "type": "string" } },
+              "sources": { "type": "array", "items": { "type": "string" }, "description": "Откуда взята информация" }
+            }
+          },
+          "bucket": { "type": "string", "enum": ["A", "B", "SKIP"] },
+          "bucket_reason": { "type": "string" },
+          "dedup_status": { "type": "string", "enum": ["NEW", "ALREADY_IN_CRM", "ALREADY_IN_APOLLO"] },
+          "flags": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "qualifier_metadata": {
+        "timestamp": "2026-03-20T15:00:00Z",
+        "total_processed": 9,
+        "verified": 4,
+        "partially_verified": 2,
+        "not_verified": 1,
+        "skipped": 2,
+        "new_leads_discovered": 1,
+        "bucket_a": 3,
+        "bucket_b": 4
+      },
+      "leads": [
+        {
+          "apollo_person_id": "6789abc",
+          "first_name": "Carlos",
+          "last_name": "Mendes",
+          "title": "Media Buyer",
+          "company": "Betano",
+          "company_domain": "betano.com",
+          "country": "Brazil",
+          "seniority": "Manager",
+          "source": "APOLLO",
+          "verification_status": "VERIFIED",
+          "verification_note": "LinkedIn актуален, роль подтверждена, спикер на SBC Summit Latam 2025",
+          "contacts_found": {
+            "linkedin_url": "https://linkedin.com/in/carlosmendes",
+            "twitter": null,
+            "email_pattern": "c.mendes@betano.com",
+            "whatsapp": null,
+            "conference_appearances": ["SBC Summit Latam 2025"],
+            "sources": ["LinkedIn", "ZoomInfo", "SBC Summit agenda"]
+          },
+          "bucket": "A",
+          "bucket_reason": "Email-паттерн найден через ZoomInfo, LinkedIn верифицирован",
+          "dedup_status": "NEW",
+          "flags": []
+        },
+        {
+          "apollo_person_id": "1234xyz",
+          "first_name": "Ana",
+          "last_name": "Silva",
+          "title": "Growth Marketing Manager",
+          "company": "Superbet",
+          "company_domain": "superbet.com",
+          "country": "Brazil",
+          "seniority": "Senior",
+          "source": "APOLLO",
+          "verification_status": "PARTIALLY_VERIFIED",
+          "verification_note": "LinkedIn найден, роль совпадает, но email не найден бесплатно",
+          "contacts_found": {
+            "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
+            "twitter": "@anasilva_mkt",
+            "email_pattern": null,
+            "whatsapp": null,
+            "conference_appearances": [],
+            "sources": ["LinkedIn", "Twitter"]
+          },
+          "bucket": "B",
+          "bucket_reason": "Нет бесплатного email, нужен Apollo Enrich",
+          "dedup_status": "NEW",
+          "flags": []
+        }
+      ]
+    }
+  ]
+}

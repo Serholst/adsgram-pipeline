@@ -1,0 +1,31 @@
+# AdsGram product context — injected into LLM prompts for profile analysis
+# Edit this when product offering or pitch angles change
+
+name: AdsGram
+short_description: >
+  AdsGram is a Telegram-native monetization platform. Publishers earn
+  by displaying ads in their channels via CPM/CPC models. No manual
+  ad management — fully automated ad matching and payments.
+
+publisher_offer:
+  how_it_works: "Connect channel → approve ad categories → earn per impression automatically"
+  key_benefits:
+    - No manual negotiation with advertisers
+    - Automated ad delivery and payment
+    - Transparent CPM rates and real-time analytics
+    - Works inside Telegram — no external tools needed
+
+  # Used when publisher already sells ads manually (has price list / telega.in)
+  pitch_automation: >
+    You're already selling ads manually — AdsGram automates this.
+    Get more fill rate, less operational overhead, same channel.
+
+  # Used when publisher has never monetized their channel
+  pitch_monetization: >
+    Your audience is ready to monetize. AdsGram lets you earn
+    from your Telegram channel with zero setup friction.
+
+  # Used when person is both publisher and advertiser
+  pitch_dual: >
+    You can both monetize your channel AND run ad campaigns for
+    your brand through the same AdsGram platform.

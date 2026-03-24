@@ -1,0 +1,92 @@
+# Fit scoring weights — used by Step 1 post-processing
+# Score is computed deterministically from LLM sub-signals
+
+# === ADVERTISER FIT ===
+advertiser:
+  vertical:
+    # Вертикали с баллами. Имена должны совпадать с niche_list из промта Step 1
+    iGaming: 3
+    Gambling: 3
+    Betting: 3
+    Poker: 3
+    Casino: 3
+    Lottery: 3
+    Dating: 3
+    "18+": 3
+    "AI girlfriend": 3
+    OnlyFans: 3
+    Crypto: 3
+    Web3: 3
+    DeFi: 3
+    NFT: 3
+    TON: 3
+    Blockchain: 3
+    GameFi: 3
+    Forex: 2
+    "Binary options": 2
+    "Copy trading": 2
+    Broker: 2
+    Finance: 2
+    Trading: 2
+    "Investment platform": 2
+    Staking: 2
+    # Другие digital-продукты
+    Entertainment: 1
+    News: 1
+    Lifestyle: 1
+    default: 0  # unclear vertical
+
+  role_seniority:
+    Media Buyer: 2
+    Affiliate Manager: 2
+    CMO: 2
+    Growth Lead: 2
+    Performance Marketer: 2
+    Head of Marketing: 2
+    Founder: 1
+    CEO: 1
+    Co-founder: 1
+    Owner: 1
+    default: 0  # junior, unclear, empty bio
+
+  telegram_presence: 1  # +1 if true
+
+  anti_icp:
+    # При наличии любого anti_icp сигнала → fit_score = 0
+    - physical_ecommerce
+    - FMCG
+    - SaaS_HR
+    - compliance_heavy
+    - government
+    - insurance
+    - "budget_under_100"
+
+  max_score: 6
+
+# === PUBLISHER FIT ===
+publisher:
+  ownership_strength:
+    explicit: 3    # bio explicitly mentions @channel, "owner of", subscriber count
+    moderate: 2    # message describes "my channel", "my audience"
+    weak: 1        # general "I have a channel" without details
+    none: 0
+
+  niche:
+    # Маппинг niche tier из niches.yaml → балл
+    tier_1: 2    # Crypto, Finance, Gambling
+    tier_2: 1    # Entertainment, News, Dating
+    tier_3: 0    # Lifestyle
+    disqualify: 0
+    default: 0   # unclear
+
+  commercial_activity: 1  # +1 if true
+  chat_context_boost: 1   # +1 if chat_type == "publisher"
+
+  max_score: 7
+
+# === ПОРОГИ fit_score → fit_level (единые для всех ролей) ===
+thresholds:
+  high: 5      # score >= 5
+  medium: 3    # score >= 3
+  low: 0       # score >= 0 (всё остальное)
+  # anti_icp → fit_score = 0 → fit_level = "low"

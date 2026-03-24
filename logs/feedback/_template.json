@@ -1,0 +1,19 @@
+{
+  "$comment": "Обратная связь от одного агента другому. Пишется когда агент обнаруживает несоответствие в данных предыдущего агента.",
+  "from_agent": "enricher",
+  "to_agent": "qualifier",
+  "timestamp": "ISO 8601",
+  "session_id": "YYYY-MM-DD_query_short",
+  "issues": [
+    {
+      "lead": "Kevin Musyoka @ Betika",
+      "expected": "VERIFIED — текущая роль подтверждена",
+      "actual": "Apollo employment_history показывает job change в 2025",
+      "severity": "high | medium | low",
+      "suggestion": "Проверять employment_history в LinkedIn, не только текущий профиль"
+    }
+  ],
+  "general_observations": [
+    "Верификация для региона Кения ненадёжна — LinkedIn-профили часто не обновлены"
+  ]
+}

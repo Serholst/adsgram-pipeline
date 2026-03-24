@@ -1,0 +1,37 @@
+role: "default"
+name: "General Introduction"
+
+subtypes:
+  A:
+    name: "Has some context"
+    description: "Some signals available but role unclear"
+    pain: "May not know about Telegram ad opportunities"
+    value_prop: "AdsGram — flexible platform for any Telegram participant"
+    pitch_template: |
+      {name}, hi!
+
+      I'm {sender_name} from AdsGram.ai — Telegram-native ad network with wallet-based targeting and 100,000+ resources: channels, bots, groups, TMA, etc.
+
+      Whether you have a channel to monetize or a product to promote on Telegram — AdsGram covers both sides. Automated matching, transparent analytics.
+
+      What's your focus — monetizing a channel or promoting a project?
+
+  B:
+    name: "Minimal context"
+    description: "Very little information available"
+    pain: "Unknown"
+    value_prop: "General AdsGram intro — flexible for any role"
+    pitch_template: |
+      {name}, hi!
+
+      I'm {sender_name}, BD in Web3. I have a large network in Telegram.
+
+      What's your focus right now — growing a project or monetizing a channel?
+
+default_subtype: "B"
+
+personalization_variables:
+  - name
+  - niche_signal
+  - geo_signal
+  - sender_name
