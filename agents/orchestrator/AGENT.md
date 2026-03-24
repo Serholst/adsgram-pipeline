@@ -129,14 +129,26 @@ LEFT_COMPANY и SKIP не попадают в CRM Writer input —
 Запрос пользователя
     │
     ▼
-SEARCHER ← задача от тебя (вертикаль+GEO или домены)
+PRE-ENRICHER ← список компаний (домены или вертикаль+GEO)
+    │
+    ▼ pre-enricher-output.json
+    │  (обогащённые данные: parent companies, decision makers,
+    │   email patterns, search vectors для Apollo)
+    │
+SEARCHER ← задача от тебя + контекст от Pre-Enricher
+    │       (search vectors: parent domains, person names,
+    │        verified domains, alternative org names)
     │
     ├─ 0 результатов? → проанализируй рекомендацию
+    │   ├─ Pre-Enricher нашёл parent company → retry по parent domain
+    │   ├─ Pre-Enricher нашёл имена → retry по person names
     │   ├─ можно расширить → перезапусти (max 2 retry)
     │   └─ исчерпано → сообщи пользователю, стоп
     │
     ▼ searcher-output.json
-QUALIFIER ← JSON от Searcher целиком
+QUALIFIER ← JSON от Searcher целиком + контекст от Pre-Enricher
+    │       (known_decision_makers и company_contacts передаются
+    │        как дополнительные данные для web-discovered leads)
     │
     ├─ 80%+ Skip? → запиши feedback для Searcher в лог,
     │               предупреди пользователя на чекпойнте
@@ -174,6 +186,19 @@ QUALIFIER ← JSON от Searcher целиком
 ```
 
 ## Обработка ответов агентов
+
+### Pre-Enricher
+
+- Парсишь `pre-enricher-output.json`
+- Извлекай `search_vectors_for_apollo` для каждой компании
+- Если `parent_companies_discovered > 0` — передай Searcher
+  инструкцию искать по parent domain/name ВМЕСТЕ с brand domain
+- Если `decision_makers_found > 0` — передай Searcher список
+  имён для поиска через Apollo People Search по имени
+- Если `enrichment_failed` для компании — передай Searcher
+  предупреждение: «непрозрачная компания, расширь фильтры»
+- Сохрани `known_decision_makers` и `company_contacts` —
+  они пойдут в Qualifier как дополнительный контекст
 
 ### Searcher
 
@@ -215,6 +240,7 @@ QUALIFIER ← JSON от Searcher целиком
 
 | Агент | Max retry | Когда retry |
 |---|---|---|
+| Pre-Enricher | 0 | Не перезапускается (best effort) |
 | Searcher | 2 | 0 результатов + есть рекомендация по расширению |
 | Qualifier | 0 | Не перезапускается (работает с тем что есть) |
 | Enricher | 1 | Только если API error, не если результат слабый |

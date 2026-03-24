@@ -8,7 +8,8 @@
     ▼
 Orchestrator ── управляет потоком данных через Agent tool
     │
-    ├─→ Searcher        → JSON → Orchestrator
+    ├─→ Pre-Enricher    → JSON → Orchestrator (company-level web recon)
+    ├─→ Searcher        → JSON → Orchestrator (armed with Pre-Enricher context)
     ├─→ Qualifier        → JSON → Orchestrator
     │   ══ CHECKPOINT 1: одобрение кредитов ══
     ├─→ Enricher         → JSON → Orchestrator
@@ -37,6 +38,8 @@ agents/
 ├── README.md
 ├── orchestrator/
 │   └── AGENT.md
+├── pre-enricher/
+│   └── AGENT.md
 ├── searcher/
 │   └── AGENT.md
 ├── qualifier/
@@ -57,6 +60,7 @@ skills/
     └── SKILL.md
 
 contracts/
+├── pre-enricher-output.json
 ├── searcher-output.json
 ├── qualifier-output.json
 ├── enricher-output.json
@@ -89,6 +93,7 @@ logs/
 
 | Агент | Скилл-источник | Секции |
 |-------|---------------|--------|
+| Pre-Enricher | `skills/adsgram-prospector/SKILL.md` | Stage 0 (Pre-Enrichment) |
 | Searcher | `skills/adsgram-prospector/SKILL.md` | Stage 1 (Intake), Stage 2 (Search) |
 | Qualifier | `skills/adsgram-prospector/SKILL.md` | Stage 3 (Discover & Verify) |
 | Enricher | `skills/adsgram-prospector/SKILL.md` | Stage 4 (Enrich), Credit Management |
@@ -116,7 +121,8 @@ logs/
 ## Порядок вызова
 
 ```
-1. Searcher      →  contracts/searcher-output.json
+0. Pre-Enricher  →  contracts/pre-enricher-output.json
+1. Searcher      →  contracts/searcher-output.json  (uses Pre-Enricher context)
 2. Qualifier     →  contracts/qualifier-output.json
 3. Enricher      →  contracts/enricher-output.json   (CHECKPOINT: одобрение кредитов)
 4. CRM Writer    →  запись в Excel (принимает данные от Qualifier и Enricher)

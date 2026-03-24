@@ -69,14 +69,48 @@ Every lead found through this pipeline is a potential advertiser — someone who
 
 The pipeline has 5 stages. Each stage requires explicit user approval before spending credits.
 
-**Stage overview (v1.2.0 — "Discover before Enrich"):**
+**Stage overview (v1.3.0 — "Pre-Enrich before Search"):**
+0. **Pre-Enrichment** — web recon at company level: find parent companies, decision maker names, email patterns, verified domains (FREE, NEW in v1.3.0)
 1. **Intake** — load files, build exclusion/dedup sets, confirm scope
-2. **Search** — Apollo people search (FREE)
+2. **Search** — Apollo people search, now armed with Pre-Enricher context (FREE)
 3. **Discover & Verify** — web search: verify roles, find contacts, discover new leads (FREE)
 4. **Enrich** — Apollo enrichment, ONLY for leads still missing contacts after Stage 3 (PAID, selective)
 5. **Report** — write to CRM, update company database
 
-The key design principle: **collect as much contact data as possible for free (Stage 3) before deciding where to spend Apollo credits (Stage 4).** This was introduced in v1.2.0 after the Nigeria session showed that web search often finds emails, phones, and social contacts that Apollo misses — especially in regions with weak Apollo coverage (Africa, parts of LATAM/Asia).
+Two key design principles:
+1. **Pre-enrich companies before Apollo search (Stage 0).** This was introduced in v1.3.0 after the adult/gambling session showed that Apollo has systematic blind spots: misattributed org records (LiveJasmin → wrong entity), post-acquisition org changes (Gamma → Byborg), and industries where employees don't list employers on LinkedIn (adult). Pre-enrichment discovers correct parent companies, verified domains, and decision maker names — giving Apollo better search vectors.
+2. **Collect as much contact data as possible for free (Stage 3) before deciding where to spend Apollo credits (Stage 4).** This was introduced in v1.2.0 after the Nigeria session showed that web search often finds emails, phones, and social contacts that Apollo misses — especially in regions with weak Apollo coverage (Africa, parts of LATAM/Asia).
+
+### Stage 0: Pre-Enrichment — Company-Level Web Recon (FREE)
+
+**This stage runs BEFORE any Apollo search.** Its purpose is to gather intelligence about target companies through open web sources, so that Apollo searches in Stage 2 are more accurate and complete.
+
+**Why this stage exists (v1.3.0):** In the adult/gambling session, Apollo returned 0 leads for 5 companies due to: misattributed org records (LiveJasmin mapped to wrong entity), post-acquisition org changes (Gamma Entertainment acquired by Byborg), and employees not listing adult employers on LinkedIn. Pre-enrichment discovers these issues upfront.
+
+**The Pre-Enricher agent handles this stage.** See `agents/pre-enricher/AGENT.md` for the full 10-step pipeline. Key outputs that feed into Stage 2:
+
+1. **Parent company discovery** — if a brand operates under a parent corp (LiveJasmin → Byborg Enterprises), Searcher will search BOTH brand domain and parent domain
+2. **Decision maker names** — names found via press, conferences, BBB allow Searcher to do Apollo People Search by person name (bypasses broken org_id mappings)
+3. **Verified domains** — the correct domain for Apollo `q_organization_domains_list`
+4. **Email patterns** — discovered via ZoomInfo/RocketReach snippets, applied to all leads from that domain
+5. **Company contacts** — general/press/partnership emails, phones, social links collected directly from web
+
+**Sources (in priority order):**
+
+1. Web search (general) — `"[company] team leadership founder CEO"`
+2. Company website — /about, /contact, /team, /press, /affiliates
+3. BBB + ZoomInfo + RocketReach snippets — officers, masked emails, phones
+4. Social profiles — LinkedIn, X/Twitter, Instagram, Telegram
+5. Press releases + PR agencies — spokesperson names, media contacts
+6. Job postings — hiring manager names, recruiter emails, tech stack
+7. Conference speaker lists — vertical-specific (SBC/ICE for iGaming, AVN/XBIZ for adult)
+8. Industry media interviews — vertical-specific publications
+9. Corporate registries — OpenCorporates, Companies House, local filings
+10. Domain WHOIS — registrant organization, registrant email
+
+**Output:** `contracts/pre-enricher-output.json` — passed to Orchestrator, who extracts `search_vectors_for_apollo` and feeds them to Searcher alongside the standard search request.
+
+**When to skip Stage 0:** If the user provides well-known companies with strong Apollo coverage (e.g., bet365, DraftKings), Pre-Enrichment adds little value. The Orchestrator may skip this stage if all companies are already in `Top_iGaming_Operators.xlsx` with previous search results showing good Apollo coverage.
 
 ### Top_iGaming_Operators.xlsx — Company Database
 

@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pre-Enricher Agent Output",
+  "description": "Контракт: что возвращает Pre-Enricher Agent → принимает Orchestrator → передаёт Searcher Agent как контекст",
+  "type": "object",
+  "required": ["pre_enrichment_metadata", "companies"],
+  "properties": {
+    "pre_enrichment_metadata": {
+      "type": "object",
+      "required": ["query", "companies_processed", "companies_enriched", "companies_failed", "parent_companies_discovered", "decision_makers_found", "timestamp"],
+      "properties": {
+        "query": { "type": "string", "description": "Исходный запрос" },
+        "companies_processed": { "type": "integer" },
+        "companies_enriched": { "type": "integer", "description": "enrichment_quality != failed" },
+        "companies_failed": { "type": "integer" },
+        "parent_companies_discovered": { "type": "integer", "description": "Сколько M&A / group structures найдено" },
+        "decision_makers_found": { "type": "integer", "description": "Суммарно найденных people" },
+        "email_patterns_found": { "type": "integer" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "web_searches_used": { "type": "integer" },
+        "recommendation": { "type": ["string", "null"], "description": "Рекомендация для Searcher" }
+      }
+    },
+    "companies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["company_name", "company_domain", "enrichment_quality", "search_vectors_for_apollo"],
+        "properties": {
+          "company_name": { "type": "string" },
+          "company_domain": { "type": ["string", "null"] },
+          "parent_company": { "type": ["string", "null"], "description": "Материнская компания (если обнаружена)" },
+          "parent_domain": { "type": ["string", "null"] },
+          "alternative_names": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Дочерние бренды, старые названия, локальные юрлица"
+          },
+          "known_decision_makers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "title", "source"],
+              "properties": {
+                "name": { "type": "string" },
+                "title": { "type": "string" },
+                "source": { "type": "string", "description": "Где найден: web/conference/press/bbb/zoominfo/job_posting" },
+                "linkedin_url": { "type": ["string", "null"] },
+                "twitter": { "type": ["string", "null"] },
+                "email": { "type": ["string", "null"] },
+                "phone": { "type": ["string", "null"] }
+              }
+            }
+          },
+          "company_contacts": {
+            "type": "object",
+            "properties": {
+              "general_email": { "type": ["string", "null"] },
+              "press_email": { "type": ["string", "null"] },
+              "partnerships_email": { "type": ["string", "null"] },
+              "phone": { "type": ["string", "null"] },
+              "address": { "type": ["string", "null"] },
+              "social_links": {
+                "type": "object",
+                "properties": {
+                  "linkedin": { "type": ["string", "null"] },
+                  "twitter": { "type": ["string", "null"] },
+                  "instagram": { "type": ["string", "null"] },
+                  "telegram": { "type": ["string", "null"] },
+                  "facebook": { "type": ["string", "null"] }
+                }
+              }
+            }
+          },
+          "email_pattern": { "type": ["string", "null"], "description": "Обнаруженный паттерн: first.last / first / firstlast и т.д." },
+          "industry_signals": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Конференции, спонсорства, найм, запуски — для персонализации outreach"
+          },
+          "enrichment_quality": {
+            "type": "string",
+            "enum": ["high", "medium", "low", "failed"],
+            "description": "high: ≥5 полей + decision makers, medium: 3-4 поля, low: 1-2 поля, failed: 0"
+          },
+          "enrichment_failed": { "type": "boolean", "default": false },
+          "failure_reason": { "type": ["string", "null"] },
+          "search_vectors_for_apollo": {
+            "type": "object",
+            "required": ["search_by_parent", "verified_domain"],
+            "properties": {
+              "search_by_parent": { "type": "boolean", "description": "Искать людей под parent company name" },
+              "parent_org_name_for_search": { "type": ["string", "null"] },
+              "search_by_person_names": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Имена decision makers для поиска в Apollo по имени"
+              },
+              "verified_domain": { "type": ["string", "null"], "description": "Подтверждённый домен для q_organization_domains_list" },
+              "alternative_domains": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Дополнительные домены для поиска (parent, дочерние)"
+              },
+              "notes": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "pre_enrichment_metadata": {
+        "query": "adult premium segment companies",
+        "companies_processed": 5,
+        "companies_enriched": 4,
+        "companies_failed": 1,
+        "parent_companies_discovered": 2,
+        "decision_makers_found": 12,
+        "email_patterns_found": 2,
+        "timestamp": "2026-03-24T15:00:00Z",
+        "web_searches_used": 35,
+        "recommendation": "LiveJasmin employees are under Byborg Enterprises in Apollo. Search by parent domain."
+      },
+      "companies": [
+        {
+          "company_name": "LiveJasmin",
+          "company_domain": "livejasmin.com",
+          "parent_company": "Byborg Enterprises",
+          "parent_domain": "byborgenterprises.com",
+          "alternative_names": ["Docler Holding", "Jasmin Group"],
+          "known_decision_makers": [
+            {
+              "name": "Gyorgy Gattyan",
+              "title": "Founder & Owner",
+              "source": "web",
+              "linkedin_url": "https://linkedin.com/in/gyorgy-gattyan",
+              "twitter": null,
+              "email": null,
+              "phone": null
+            },
+            {
+              "name": "Karoly Papp",
+              "title": "Executive Advisor (former CEO)",
+              "source": "linkedin",
+              "linkedin_url": "https://lu.linkedin.com/in/karoly-papp-",
+              "twitter": null,
+              "email": null,
+              "phone": null
+            }
+          ],
+          "company_contacts": {
+            "general_email": "info@doclerholding.com",
+            "press_email": null,
+            "partnerships_email": null,
+            "phone": "+352 26 11 18 1",
+            "address": "Luxembourg",
+            "social_links": {
+              "linkedin": "https://linkedin.com/company/docler-holding-luxembourg",
+              "twitter": null,
+              "instagram": "https://instagram.com/doclerholdinglu",
+              "telegram": null,
+              "facebook": "https://facebook.com/DoclerHoldingLU"
+            }
+          },
+          "email_pattern": null,
+          "industry_signals": ["Acquired Gamma Entertainment Jan 2025", "1300+ employees"],
+          "enrichment_quality": "high",
+          "enrichment_failed": false,
+          "failure_reason": null,
+          "search_vectors_for_apollo": {
+            "search_by_parent": true,
+            "parent_org_name_for_search": "Byborg Enterprises",
+            "search_by_person_names": ["Gyorgy Gattyan", "Karoly Papp", "Julianna Sonkoly"],
+            "verified_domain": "byborgenterprises.com",
+            "alternative_domains": ["doclerholding.com", "livejasmin.com"],
+            "notes": "Apollo maps livejasmin.com to wrong entity. Search by Byborg or Docler Holding."
+          }
+        }
+      ]
+    }
+  ]
+}
