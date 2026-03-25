@@ -49,7 +49,7 @@ Spawn a subagent:
 
 ```
 Read the skill at [path to adsgram-outreach/SKILL.md].
-Write pitches for new leads in AdsGram_CRM.xlsx.
+Write pitches for new leads in CRM (Google Sheets).
 Return pitches.
 ```
 

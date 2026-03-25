@@ -1,6 +1,6 @@
 ---
 name: adsgram-outreach
-description: "AdsGram cold outreach copywriter for Apollo leads. Writes personalized cold emails to book intro calls with iGaming/VPN decision-makers. Use this skill when the user says: 'напиши письмо', 'подготовь аутрич', 'сделай питч', 'write outreach', 'draft email for [lead name]', or wants to compose cold emails for leads from AdsGram_CRM.xlsx. Also trigger when the user pastes lead data (name + title + company) and asks for a pitch. This skill handles EMAIL WRITING only — for finding leads, use adsgram-prospector instead."
+description: "AdsGram cold outreach copywriter for Apollo leads. Writes personalized cold emails to book intro calls with iGaming/VPN decision-makers. Use this skill when the user says: 'напиши письмо', 'подготовь аутрич', 'сделай питч', 'write outreach', 'draft email for [lead name]', or wants to compose cold emails for leads from the CRM. Also trigger when the user pastes lead data (name + title + company) and asks for a pitch. This skill handles EMAIL WRITING only — for finding leads, use adsgram-prospector instead."
 version: 1.0.0
 ---
 
@@ -39,7 +39,7 @@ The user will provide lead data in one of three ways:
 **Option A — Lead name from CRM:**
 > "Напиши письмо для Ricardo Chavez"
 
-Read the CRM file at `/Users/sergopro/Documents/adsgram/AdsGram_CRM.xlsx`, find the lead by name on the "Leads" sheet, and use all available columns for context.
+Load the CRM via `python3 tools/sheets_helper.py crm-read-all`, find the lead by name, and use all available columns for context.
 
 **Option B — Pasted lead data:**
 > "Ricardo Chavez, Marketing Director MX & Latam, Betway Global, Mexico, $1.1B revenue, 750 employees"
@@ -150,6 +150,18 @@ Always say "across [region]" when using averaged numbers — never attribute a r
 ### Case Study (use selectively, not in every email)
 
 Campaign result (Feb 2025, RU, TMA iGaming): $21,950 budget → 1.6M shows, 3.2% CTR, 26,150 new TMA users, $0.85 CPI. iGaming CPM premium: ~$13.72 (vs platform avg $2.5 for RU).
+
+---
+
+## Pattern Library
+
+Before writing any pitch, read `business/outreach_patterns.yaml`. It contains:
+
+- **Pattern Classes** — reusable opening line structures with examples. Use these as the basis for your opening line. The signal classification table below still applies, but pattern classes give you ready-made structures and approved examples.
+- **Corrections** — cumulative amendments that override rules in this SKILL.md. If a correction contradicts a rule here, the correction wins.
+- **Counter Config** — outreach message counter settings (see AGENT.md for update logic).
+
+Priority: **Corrections > Pattern Classes > this SKILL.md**.
 
 ---
 

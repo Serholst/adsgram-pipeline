@@ -6,24 +6,41 @@
 
 ## Пути к файлам
 
-Все пути относительно корня проекта (`adsgram/`).
+Все пути относительно корня проекта (`adsgram-pipeline/`).
 
 | Файл | Путь | Назначение |
 |------|------|------------|
-| CRM | `apollo/data/AdsGram_CRM.xlsx` | Основная база лидов (лист "Leads") |
-| Company DB | `apollo/data/Top_iGaming_Operators.xlsx` | Exclusion list + лог поисков |
+| CRM | Google Sheet (ID в `.env`: `CRM_SHEET_ID`), лист "Leads" | Основная база лидов |
+| Company DB | Google Sheet (ID в `.env`: `COMPANYDB_SHEET_ID`), лист "Top iGaming Operators" | Exclusion list + лог поисков |
+| Sheets Helper | `tools/sheets_helper.py` | CLI для взаимодействия с Google Sheets |
 | Контракты | `contracts/` | JSON-схемы между агентами |
 | Логи | `logs/` | Сессии, feedback, ретроспективы |
 
+### Sheets Helper — команды
+
+Все агенты используют `python3 tools/sheets_helper.py <command>` через Bash tool:
+
+| Команда | Описание |
+|---------|----------|
+| `crm-read-all` | Все строки CRM → JSON |
+| `crm-read-headers` | Заголовки CRM → JSON |
+| `crm-append-rows <json-file>` | Добавить строки в CRM из JSON-файла |
+| `crm-dedup-set` | Dedup sets: emails + name×company пары |
+| `crm-validate-headers` | Проверка структуры CRM (14 колонок) |
+| `crm-row-count` | Количество строк в CRM |
+| `companydb-read-all` | Все строки Company DB → JSON |
+| `companydb-domains` | Домены компаний для exclusion |
+| `companydb-append-rows <json-file>` | Добавить компании в DB из JSON-файла |
+
 ## Скиллы — пути
 
-Все пути относительно корня проекта (`adsgram/`).
+Все пути относительно корня проекта (`adsgram-pipeline/`).
 
 | Скилл | Путь |
 |-------|------|
-| Prospector | `skills/adsgram-prospector/SKILL.md` |
-| Outreach | `skills/adsgram-outreach/SKILL.md` |
-| Autopipeline | `skills/adsgram-autopipeline/SKILL.md` |
+| Prospector | `skills/prospector/SKILL.md` |
+| Outreach | `skills/outreach/SKILL.md` |
+| Autopipeline | `skills/autopipeline/SKILL.md` |
 | Gmail Drafter | `skills/gmail-drafter/SKILL.md` |
 
 ## ICP (Ideal Customer Profile)
@@ -63,5 +80,5 @@
 
 - Общение с пользователем: **русский**
 - JSON-контракты между агентами: **английский**
-- Excel-заголовки: **английский**
-- Excel-заметки: **русский** где уместно
+- Google Sheets заголовки: **английский**
+- Google Sheets заметки: **русский** где уместно

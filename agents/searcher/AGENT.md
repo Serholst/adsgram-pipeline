@@ -42,8 +42,8 @@
 ### Critical: Exclusion Gates
 
 Перед ЛЮБЫМ поиском ты ОБЯЗАН выполнить шаги Stage 1:
-- **Step 1a**: загрузить exclusion set из Top_iGaming_Operators.xlsx
-- **Step 1b**: загрузить CRM dedup set из AdsGram_CRM.xlsx
+- **Step 1a**: загрузить exclusion set: `python3 tools/sheets_helper.py companydb-domains`
+- **Step 1b**: загрузить CRM dedup set: `python3 tools/sheets_helper.py crm-dedup-set`
 - **Step 1d**: прогнать validation gate — проверить каждого кандидата
   против ОБОИХ exclusion sources (operators + CRM)
 - **Step 1e**: загрузить Apollo contacts set

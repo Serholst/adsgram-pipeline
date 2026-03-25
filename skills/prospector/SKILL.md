@@ -112,9 +112,9 @@ Two key design principles:
 
 **Output:** `contracts/pre-enricher-output.json` — passed to Orchestrator, who extracts `search_vectors_for_apollo` and feeds them to Searcher alongside the standard search request.
 
-**When to skip Stage 0:** If the user provides well-known companies with strong Apollo coverage (e.g., bet365, DraftKings), Pre-Enrichment adds little value. The Orchestrator may skip this stage if all companies are already in `Top_iGaming_Operators.xlsx` with previous search results showing good Apollo coverage.
+**When to skip Stage 0:** If the user provides well-known companies with strong Apollo coverage (e.g., bet365, DraftKings), Pre-Enrichment adds little value. The Orchestrator may skip this stage if all companies are already in Company DB with previous search results showing good Apollo coverage.
 
-### Top_iGaming_Operators.xlsx — Company Database
+### Company Database (Google Sheet: "Top iGaming Operators")
 
 **This file serves two purposes and MUST be read at the start of every prospecting session:**
 
@@ -133,27 +133,27 @@ Two key design principles:
 - I: Prospected ← **"Yes (YYYY-MM-DD)" if searched, empty if not**
 - J: Search Results ← **summary: leads found, roles, quality, flags**
 
-**How to read — run this FIRST, before any company selection:**
-```python
-import openpyxl
-wb = openpyxl.load_workbook('Top_iGaming_Operators.xlsx')
-ws = wb.active
-exclusion_domains = set()
-for row in range(2, ws.max_row + 1):
-    domain = ws.cell(row=row, column=4).value
-    if domain:
-        exclusion_domains.add(domain.strip().lower())
-print(f"Exclusion set loaded: {len(exclusion_domains)} domains")
+**How to load exclusion domains — run this FIRST, before any company selection:**
+
+```bash
+python3 tools/sheets_helper.py companydb-domains
 ```
 
-**Keep `exclusion_domains` in memory for the entire session.** Every domain you consider searching must pass through the validation gate in Stage 1.
+Returns JSON: `{"domains": [...], "count": N}`. Store `domains` as `exclusion_domains` — you'll need it throughout the session.
 
 **How to update after prospecting — MANDATORY for ALL searched companies, including those with 0 results:**
-- Add each newly searched company as a new row at the bottom (even if zero leads were found)
+
+Save new companies to `/tmp/companies_batch.json` and append:
+
+```bash
+python3 tools/sheets_helper.py companydb-append-rows /tmp/companies_batch.json
+```
+
+- Add each newly searched company (even if zero leads were found)
 - Set column I to "Yes (YYYY-MM-DD)"
 - Set column J to a summary: "N leads found: [roles]. [quality notes]. [flags like CATCHALL, weak coverage, etc.]"
 - If zero results: "0 relevant leads. [reason: weak Apollo coverage / only BD roles / etc.]"
-- **This is a hard requirement.** Every company that was sent to Apollo people search MUST be recorded, regardless of outcome. This ensures the exclusion set grows and prevents re-searching companies that yielded nothing.
+- **This is a hard requirement.** Every company that was sent to Apollo people search MUST be recorded, regardless of outcome.
 
 ### Stage 1: Intake — Understand the Request
 
@@ -162,36 +162,27 @@ Parse what the user wants. They might provide:
 - A vertical + GEO combination ("find leads in iGaming in Brazil")
 - A vague request ("найди ещё лидов")
 
-**Step 1a: Load the exclusion set.** If you haven't already loaded Top_iGaming_Operators.xlsx in this session, do it now using the Python snippet above. Store `exclusion_domains` — you'll need it throughout the session.
+**Step 1a: Load the exclusion set.** If you haven't already loaded the Company DB in this session, do it now:
 
-**Step 1b: Load the CRM — contact dedup set AND company exclusion set.** If you haven't already loaded the CRM in this session, do it now. The CRM is at `AdsGram_CRM.xlsx` in the mounted folder. Extract **both** individual contacts (for lead-level dedup) **and** company names (for company-level exclusion):
-
-```python
-import openpyxl
-crm_wb = openpyxl.load_workbook('AdsGram_CRM.xlsx')
-crm_ws = crm_wb['Leads']
-crm_emails = set()
-crm_names = set()
-crm_companies = set()  # Company-level exclusion
-for row in range(2, crm_ws.max_row + 1):
-    email = crm_ws.cell(row=row, column=6).value  # column F = Email
-    name = crm_ws.cell(row=row, column=4).value    # column D = Name
-    company = crm_ws.cell(row=row, column=1).value  # column A = Company
-    if email:
-        crm_emails.add(email.strip().lower())
-    if name and company:
-        crm_names.add((name.strip().lower(), company.strip().lower()))
-    if company:
-        crm_companies.add(company.strip().lower())
-
-print(f"CRM dedup set loaded: {len(crm_emails)} emails, {len(crm_names)} name+company pairs, {len(crm_companies)} companies")
+```bash
+python3 tools/sheets_helper.py companydb-domains
 ```
 
-**Keep `crm_emails`, `crm_names`, and `crm_companies` in memory for the entire session.** These sets serve THREE purposes:
+Store `domains` as `exclusion_domains` — you'll need it throughout the session.
 
-1. **`crm_companies` — Company-level exclusion (Stage 1, Step 1d):** If a candidate company already exists in CRM (i.e. we already have leads from that company), it is blocked from search. This is a SECOND exclusion filter alongside `exclusion_domains` from Top_iGaming_Operators.xlsx. Both files serve as exclusion lists — if a company appears in EITHER, do not search it.
-2. **`crm_names` / `crm_emails` — Lead-level dedup (Stage 4):** Filter out individual leads whose email or name+company already exist in CRM. This prevents wasting credits on re-enrichment.
-3. **`crm_names` / `crm_emails` — Final dedup (Stage 5):** Before writing to CRM to prevent duplicate rows.
+**Step 1b: Load the CRM — contact dedup set AND company exclusion set.** If you haven't already loaded the CRM in this session, do it now:
+
+```bash
+python3 tools/sheets_helper.py crm-dedup-set
+```
+
+Returns JSON with `emails`, `name_company` (format: `"name|||company"`), and `total_rows`. Extract `crm_companies` from `name_company` by splitting on `|||` and collecting unique company names.
+
+**Keep these sets in memory for the entire session.** They serve THREE purposes:
+
+1. **Company-level exclusion (Stage 1, Step 1d):** If a candidate company already exists in CRM, it is blocked from search. This is a SECOND exclusion filter alongside `exclusion_domains` from Company DB. Both sources serve as exclusion lists — if a company appears in EITHER, do not search it.
+2. **Lead-level dedup (Stage 4):** Filter out individual leads whose email or name+company already exist in CRM. This prevents wasting credits on re-enrichment.
+3. **Final dedup (Stage 5):** Before writing to CRM to prevent duplicate rows.
 
 If a lead from Apollo search matches CRM by name+company, mark it as `ALREADY IN CRM` in the results table and exclude from enrichment. If the user explicitly asks to re-enrich a known contact, warn them and proceed only after confirmation.
 
@@ -200,43 +191,17 @@ If a lead from Apollo search matches CRM by name+company, mark it as `ALREADY IN
 - **Vertical/GEO combination** → use Apollo Organization Search (FREE) to discover companies, then filter
 - **Vague request ("найди ещё лидов")** → use Apollo Organization Search with relevant vertical keywords to discover NEW companies not in the exclusion set. Do not cherry-pick from the Top_iGaming file.
 
-**Step 1d: Validation gate — run before ANY Apollo people search.** This is a hard requirement. After assembling your candidate list, run this check programmatically against **BOTH** exclusion sources (Top_iGaming_Operators.xlsx domains AND CRM company names):
+**Step 1d: Validation gate — run before ANY Apollo people search.** This is a hard requirement. After assembling your candidate list, check each one against **BOTH** exclusion sources:
 
-```python
-# candidate_companies = [{"name": "CompanyX", "domain": "companyx.com"}, ...]  ← your proposed search list
-blocked_operators = []  # blocked by Top_iGaming_Operators.xlsx
-blocked_crm = []        # blocked by CRM (already have leads)
-approved = []
+1. Check domain against `exclusion_domains` (from `companydb-domains`)
+2. Check company name against `crm_companies` (from `crm-dedup-set`)
 
-for c in candidate_companies:
-    d = c['domain'].strip().lower()
-    name = c['name'].strip().lower()
+For each candidate:
+- If domain in `exclusion_domains` → BLOCKED by Company DB
+- Else if company name in `crm_companies` → BLOCKED by CRM (already have leads)
+- Else → APPROVED for search
 
-    if d in exclusion_domains:
-        blocked_operators.append(c)
-    elif name in crm_companies:
-        blocked_crm.append(c)
-    else:
-        approved.append(c)
-
-if blocked_operators:
-    print(f"BLOCKED by Top_iGaming_Operators ({len(blocked_operators)}):")
-    for b in blocked_operators:
-        print(f"  ✗ {b['name']} ({b['domain']})")
-if blocked_crm:
-    print(f"BLOCKED by CRM — already have leads ({len(blocked_crm)}):")
-    for b in blocked_crm:
-        print(f"  ✗ {b['name']} ({b['domain']})")
-print(f"\nAPPROVED for search ({len(approved)}):")
-for a in approved:
-    print(f"  ✓ {a['name']} ({a['domain']})")
-```
-
-Only companies that appear in the `approved` list may be sent to Apollo. If `blocked_operators` or `blocked_crm` is non-empty, inform the user which companies were filtered out and which source blocked them.
-
-This gate checks TWO exclusion sources:
-1. **Top_iGaming_Operators.xlsx** — company database (by domain)
-2. **AdsGram_CRM.xlsx** — CRM (by company name) — if we already have leads from a company, don't search it again
+Only APPROVED companies may be sent to Apollo. Inform the user which companies were filtered out and which source blocked them.
 
 This dual gate exists because in previous sessions the exclusion check only covered the operators file, and companies that were already in CRM were accidentally re-searched.
 
@@ -376,9 +341,9 @@ After enrichment, immediately flag:
 
 **Primary output: append leads to the CRM file.**
 
-The CRM file lives at: `AdsGram_CRM.xlsx` in the mounted folder.
+The CRM lives in Google Sheets (access via `tools/sheets_helper.py`).
 
-Open this file, read existing data on the "Leads" sheet, and append new leads starting from the first empty row. If the file doesn't exist — create it. The CRM has these columns:
+Read existing data and append new leads. The CRM has these columns:
 
 Company | Vertical | Country | Name | Title | Email | Email Status | Web Search | Lead Status | Stage | First Contact Date | Last Activity Date | Suggested CTA | Notes
 
@@ -405,7 +370,7 @@ Company | Vertical | Country | Name | Title | Email | Email Status | Web Search 
 - **Web Search**: fill with any discovered channels (even for skipped leads)
 - All other fields (Stage, dates, CTA): leave empty
 
-**Stage column values** (dropdown in Excel):
+**Stage column values:**
 - `1st letter sent` — initial outreach sent
 - `ghosting` — no response after follow-up
 - `declined` — explicitly said no
@@ -419,9 +384,9 @@ Priority sorting for new leads (within the batch being appended):
 3. Generic Marketing/Sales roles last
 4. Within each tier, larger companies first
 
-If the CRM file is not accessible (folder not mounted), fall back to creating a standalone xlsx report in the outputs directory and notify the user. Do NOT create a separate report xlsx alongside the CRM — the CRM is the single deliverable.
+If Google Sheets is not accessible, fall back to creating a standalone JSON report in the outputs directory and notify the user. Do NOT create a separate report alongside the CRM — the CRM is the single deliverable.
 
-**After writing CRM, update Top_iGaming_Operators.xlsx:**
+**After writing CRM, update Company DB** via `python3 tools/sheets_helper.py companydb-append-rows`:
 - Add each newly searched company (if not already in the file) with search results summary
 - Mark column I as "Yes (YYYY-MM-DD)" and column J with leads found, roles, and quality notes
 
@@ -444,14 +409,14 @@ This is extremely important — the user has explicitly asked for careful credit
 
 ## Language
 
-The user communicates in Russian. Respond in Russian. The Excel report can use English column headers but Russian notes where appropriate.
+The user communicates in Russian. Respond in Russian. Google Sheets uses English column headers but Russian notes where appropriate.
 
 ## Common Pitfalls
 
 Based on experience with this pipeline:
 
-- **Searching companies already in Top_iGaming_Operators.xlsx** — this happened when the exclusion set was loaded but company selection was done visually instead of programmatically. The fix: always run the validation gate in Step 1d. If you find yourself selecting companies by scrolling through a list and picking names, stop — you're about to repeat this mistake. Let the code do the filtering.
-- **Searching companies already in CRM** — this happened when only Top_iGaming_Operators.xlsx was used as exclusion source, but CRM was only checked at the individual lead level before enrichment. Companies that already had leads in CRM were re-searched via Apollo people search, wasting time. The fix: Step 1b now also builds `crm_companies` set, and Step 1d validation gate checks candidates against BOTH `exclusion_domains` (operators file) AND `crm_companies` (CRM). Both files are exclusion sources at the company level.
+- **Searching companies already in Company DB** — this happened when the exclusion set was loaded but company selection was done visually instead of programmatically. The fix: always run the validation gate in Step 1d. If you find yourself selecting companies by scrolling through a list and picking names, stop — you're about to repeat this mistake. Let the code do the filtering.
+- **Searching companies already in CRM** — this happened when only Company DB was used as exclusion source, but CRM was only checked at the individual lead level before enrichment. Companies that already had leads in CRM were re-searched via Apollo people search, wasting time. The fix: Step 1b now also builds `crm_companies` set, and Step 1d validation gate checks candidates against BOTH `exclusion_domains` (operators file) AND `crm_companies` (CRM). Both files are exclusion sources at the company level.
 - **Enriching contacts already in CRM** — wasted credits. The fix: always load CRM dedup set in Step 1b and check every lead against `crm_emails` and `crm_names` before enrichment.
 - **Crypto casinos** (Stake, BC.Game, 1xBet) have almost zero Apollo coverage — they're deliberately private. Warn the user upfront.
 - **VPN search with "cybersecurity" keyword** returns too many irrelevant results. Use only "VPN" as keyword tag. Focus on companies which provide VPN as a Service.
