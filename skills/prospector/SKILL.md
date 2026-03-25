@@ -69,19 +69,19 @@ Every lead found through this pipeline is a potential advertiser — someone who
 
 The pipeline has 5 stages. Each stage requires explicit user approval before spending credits.
 
-**Stage overview (v1.5.0 — "No Duplicate Searches"):**
-0a. **Pre-Enrichment A** — web recon at COMPANY level: parent companies, decision maker names, email patterns, verified domains (FREE)
+**Stage overview (v1.6.0 — "Focused Agents"):**
+0a. **Pre-Enrichment** — company-level web recon: parent companies, decision maker names, email patterns, verified domains. Agent: **Pre-Enricher** (FREE)
 1. **Intake** — load files, build exclusion/dedup sets, confirm scope
-2. **Search** — Apollo people search, armed with Pre-Enricher context (FREE)
-0b. **Pre-Enrichment B** — for each lead: find contacts + verify role + assign bucket — all in ONE web search per person. Also discover new leads for 0-result companies. Outputs qualifier-output.json with buckets A/B/Skip (FREE)
-3. **Enrich** — Apollo enrichment, ONLY for Bucket B leads (PAID, selective)
-4. **Report** — write to CRM, update company database
+2. **Search** — Apollo people search, armed with Pre-Enricher context. Agent: **Searcher** (FREE)
+0b. **Discovery** — for each lead: find contacts + verify role + assign bucket — all in ONE web search per person. Also discover new leads for 0-result companies. Agent: **Discoverer** (FREE)
+3. **Enrich** — Apollo enrichment, ONLY for Bucket B leads. Agent: **Enricher** (PAID, selective)
+4. **Report** — write to CRM, update company database. Agent: **CRM Writer**
 
-**Qualifier agent eliminated in v1.5.0.** Its three responsibilities (contact discovery, role verification, bucket sort) are now performed by Pre-Enricher Этап B in a single pass. One LinkedIn search per lead yields: profile URL (contact), current employer (verification), and enough data for bucket assignment. Zero duplicate searches.
+**Qualifier agent eliminated in v1.5.0, Pre-Enricher split in v1.6.0.** Company-level web recon (Pre-Enricher) and person-level discovery (Discoverer) are now separate focused agents. Each has one input, one output, one purpose.
 
 Two key design principles:
-1. **Pre-enrich before Apollo search (Stage 0A).** Apollo has systematic blind spots: misattributed org records, post-acquisition org changes, industries where employees hide employers on LinkedIn. Pre-enrichment discovers correct parent companies, verified domains, and decision maker names.
-2. **One search per lead, three outputs (Stage 0B).** A single `"[Name]" "[Company]" LinkedIn` search produces: (a) LinkedIn URL = contact channel, (b) current employer = role verification, (c) enough data for bucket A/B/Skip assignment. Pre-Enricher is the ONLY agent that does free web research.
+1. **Pre-enrich before Apollo search (Stage 0A).** Apollo has systematic blind spots: misattributed org records, post-acquisition org changes, industries where employees hide employers on LinkedIn. Pre-Enricher discovers correct parent companies, verified domains, and decision maker names.
+2. **One search per lead, three outputs (Stage 0B).** A single `"[Name]" "[Company]" LinkedIn` search produces: (a) LinkedIn URL = contact channel, (b) current employer = role verification, (c) enough data for bucket A/B/Skip assignment. Discoverer is the ONLY agent that does person-level free web research.
 
 ### Stage 0: Pre-Enrichment — Company-Level Web Recon (FREE)
 
