@@ -35,7 +35,9 @@
 
 ## Бизнес-логика
 
-Прочитай prospector SKILL.md — **Stage 1 (Intake)** и **Stage 2 (Search)**.
+Прочитай:
+- prospector SKILL.md — **Stage 1 (Intake)** и **Stage 2 (Search)**: ICP, exclusion gates, search parameters
+- **apollo-search-patterns.md** — 5 паттернов отказа Apollo, fallback escalation ladder, parameter recipes, vertical-specific особенности. **Это критический документ** — он определяет как реагировать на 0 результатов.
 
 ### Critical: Exclusion Gates
 
@@ -105,26 +107,66 @@ domains_blocked, счётчики) + `leads[]` (apollo_person_id,
 
 ## Стратегии оптимизации
 
-### Расширение поиска
-Если батч вернул мало результатов — не отдавай пустой список.
-Подумай: слишком узкие фильтры? Нестандартные должности в регионе?
-Попробуй расширить — убери seniority, добавь альтернативные titles,
-убери email_status. Пометь лидов найденных при расширении
-флагом `BROADENED_SEARCH`.
+### Fallback Escalation Ladder (из apollo-search-patterns.md)
+
+Для каждой компании следуй этой лестнице:
+
+1. **Standard search** — brand domain + seniority + title filters (Recipe 1)
+2. Если <3 результатов → **Broadened search** — без seniority (Recipe 2)
+3. Если <3 результатов и Pre-Enricher дал parent domain → **Parent search** (Recipe 3)
+4. Если <3 результатов и Pre-Enricher дал имена → **Person name search** (Recipe 4)
+5. Если всё ещё 0 → пометь `APOLLO_BLIND_SPOT`, передай Qualifier для web discovery
+
+**Не прыгай сразу на шаг 5.** Каждый шаг — это шанс найти людей бесплатно.
+
+### Использование Pre-Enricher контекста
+
+Если Orchestrator передал `pre-enricher-output.json`, используй
+`search_vectors_for_apollo` для каждой компании:
+
+- `search_by_parent: true` → сразу ищи по parent domain НА РАВНЕ с brand domain
+- `search_by_person_names: ["Name1", "Name2"]` → используй на шаге 4 (Recipe 4)
+- `verified_domain` → используй ВМЕСТО brand domain если отличается
+- `alternative_domains` → добавь в `q_organization_domains_list`
+
+### Platform User Detection (Pattern 4)
+
+В adult вертикали Apollo индексирует пользователей платформ как сотрудников.
+Фильтруй по title ПОСЛЕ получения результатов:
+
+```
+EXCLUDE_TITLES = ["model", "content creator", "entertainer", "cam",
+    "performer", "star", "webcam", "streamer", "influencer",
+    "creator", "artist", "mv star", "fetish", "actress", "actor"]
+```
+
+Если title содержит любое из этих слов → флаг `PLATFORM_USER`,
+не считай как lead. Если после фильтрации 0 реальных сотрудников →
+компания непрозрачна, пометь `PLATFORM_USERS_ONLY`.
 
 ### Обнаружение компаний
+
 Если запрос = вертикаль + GEO, ты сначала ищешь компании.
 Не останавливайся на первой странице. Если первая страница
 вернула 25 компаний и все релевантны — есть ещё.
 Но фильтруй агрессивно: «cybersecurity» ≠ VPN,
 «retail betting shop» ≠ online iGaming.
 
+### Wrong Org Mapping Detection (Pattern 1)
+
+После company search проверь: совпадает ли название Apollo org
+с ожидаемым брендом? Если нет (LiveJasmin → "SaG Stiftung") —
+это Pattern 1. Не ищи людей по этому org_id.
+Используй parent domain от Pre-Enricher.
+
 ### Максимизация покрытия
-Для каждой компании оцени: есть ли люди в Apollo?
-Если компания вернула 0 — зафиксируй это явно в
-`search_metadata.domains_searched`. Компании с нулевым покрытием
-важны для следующего этапа пайплайна — они будут обработаны
-через веб-поиск.
+
+Для каждой компании оцени результат по метрикам из
+apollo-search-patterns.md. Компании с нулевым покрытием
+зафиксируй явно в `search_metadata` с указанием:
+- Какие шаги escalation ladder пройдены
+- Какой паттерн отказа обнаружен (Pattern 1-5)
+- Рекомендация для Qualifier
 
 ## Рефлексия после выполнения
 

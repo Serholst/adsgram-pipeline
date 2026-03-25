@@ -203,9 +203,20 @@ QUALIFIER ← JSON от Searcher целиком + контекст от Pre-Enri
 ### Searcher
 
 - Парсишь `searcher-output.json`
-- `leads` пуст → читай `search_metadata`, анализируй.
-  Retry с расширенными параметрами (max 2 попытки).
-- `leads` не пуст → передавай Qualifier целиком
+- Читай `domains_audit` — pattern usage audit:
+  - `all_available_exhausted: false` + `final_leads: 0` на любой компании →
+    **процессная ошибка**: Searcher не использовал все доступные паттерны.
+    Запиши feedback в `logs/feedback/` с `to_agent: "searcher"`.
+  - `pattern_detected: "WRONG_ORG_MAPPING"` или `"BRAND_NOT_EMPLOYER"` +
+    Pre-Enricher НЕ запускался → retry: сначала запусти Pre-Enricher,
+    затем Searcher повторно с новыми search vectors.
+  - `pattern_detected: "GHOST_ENTITY"` → не retry, пропусти компанию.
+- `leads` пуст → читай `search_metadata` + `domains_audit`, анализируй.
+  Если есть компании с `escalation_depth < 5` и `all_available_exhausted: false` →
+  retry с инструкцией использовать пропущенные паттерны.
+  Max 2 попытки.
+- `leads` не пуст → передавай Qualifier целиком + `domains_audit`
+  (Qualifier использует pattern info для приоритизации web discovery)
 
 ### Qualifier
 

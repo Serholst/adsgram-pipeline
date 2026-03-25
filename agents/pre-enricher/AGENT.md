@@ -143,6 +143,42 @@
 - GitHub repos — CTO и tech leads
 - Token2049, Web Summit — конференции
 
+## Что Searcher ожидает от тебя
+
+Прочитай `skills/prospector/apollo-search-patterns.md` — **Patterns 1-2**.
+
+Searcher использует твой output для fallback-шагов 3 и 4 своей Escalation Ladder.
+Без твоих данных эти шаги НЕДОСТУПНЫ и Searcher останавливается на шаге 2.
+
+**Pattern 1 (Wrong Org Mapping):** Apollo маппит brand domain на неправильное
+юрлицо. Searcher НЕ МОЖЕТ это обнаружить сам. Тебе нужно найти:
+- `parent_company` — название материнской компании
+- `parent_domain` — домен для `q_organization_domains_list`
+- `alternative_names` — другие юрлица под которыми числятся сотрудники
+
+Без этих полей Searcher ищет по битому org_id и получает 0.
+
+**Pattern 2 (Brand ≠ Employer):** Сотрудники числятся под parent corp,
+не под брендом продукта. Тебе нужно:
+- `search_vectors_for_apollo.search_by_parent: true`
+- `search_vectors_for_apollo.parent_org_name_for_search` — имя для Apollo search
+- `search_vectors_for_apollo.alternative_domains` — все домены группы
+
+**Pattern 4 (Platform Users):** Для adult-платформ укажи в `notes`:
+"adult platform — Apollo может индексировать пользователей как сотрудников,
+Searcher должен применить platform_user_filter".
+
+**Имена decision makers** (шаг 4 Searcher Ladder):
+- `search_vectors_for_apollo.search_by_person_names` — имена для Recipe 4
+- Каждое имя = один поисковый запрос Apollo, поэтому приоритизируй:
+  директора и C-level → менеджеры → остальные
+
+**Аудит:** Searcher записывает `patterns_available` в `domains_audit`.
+Если ты предоставил parent_domain → `parent_domain_search: true` (доступен).
+Если не предоставил → `parent_domain_search: false` (недоступен).
+Это значит: качество твоего output НАПРЯМУЮ влияет на количество
+доступных fallback-шагов у Searcher.
+
 ## Конфигурация
 
 Прочитай config/agent-config.md. Тебе нужны:

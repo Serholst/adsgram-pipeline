@@ -94,7 +94,9 @@ logs/
 | Агент | Скилл-источник | Секции |
 |-------|---------------|--------|
 | Pre-Enricher | `skills/adsgram-prospector/SKILL.md` | Stage 0 (Pre-Enrichment) |
+|  | `skills/adsgram-prospector/apollo-search-patterns.md` | Patterns 1-2 (what Searcher expects) |
 | Searcher | `skills/adsgram-prospector/SKILL.md` | Stage 1 (Intake), Stage 2 (Search) |
+|  | `skills/adsgram-prospector/apollo-search-patterns.md` | 5 failure patterns, fallback ladder, recipes |
 | Qualifier | `skills/adsgram-prospector/SKILL.md` | Stage 3 (Discover & Verify) |
 | Enricher | `skills/adsgram-prospector/SKILL.md` | Stage 4 (Enrich), Credit Management |
 | CRM Writer | `skills/adsgram-prospector/SKILL.md` | Stage 5 (Report) |

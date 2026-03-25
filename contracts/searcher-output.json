@@ -7,7 +7,7 @@
   "properties": {
     "search_metadata": {
       "type": "object",
-      "required": ["query", "domains_searched", "domains_blocked", "timestamp", "total_found", "new", "already_in_crm", "already_in_apollo", "flagged"],
+      "required": ["query", "domains_searched", "domains_blocked", "timestamp", "total_found", "new", "already_in_crm", "already_in_apollo", "flagged", "domains_audit"],
       "properties": {
         "query": { "type": "string", "description": "Исходный запрос пользователя" },
         "domains_searched": { "type": "array", "items": { "type": "string" }, "description": "Домены, по которым выполнен поиск" },
@@ -17,7 +17,93 @@
         "new": { "type": "integer" },
         "already_in_crm": { "type": "integer" },
         "already_in_apollo": { "type": "integer" },
-        "flagged": { "type": "integer" }
+        "flagged": { "type": "integer" },
+        "domains_audit": {
+          "type": "array",
+          "description": "Pattern usage audit: для каждой компании — какие паттерны были доступны, какие использованы, какие пропущены. Процессный аудит, не метрика результата.",
+          "items": {
+            "type": "object",
+            "required": ["domain", "patterns_available", "patterns_used", "escalation_depth", "all_available_exhausted", "final_leads"],
+            "properties": {
+              "domain": { "type": "string", "description": "Brand domain компании" },
+              "patterns_available": {
+                "type": "object",
+                "description": "Какие паттерны МОГЛИ быть использованы (на основе данных Pre-Enricher + вертикали)",
+                "properties": {
+                  "standard_search": { "type": "boolean", "description": "Recipe 1: brand domain + seniority + title. Всегда true" },
+                  "broadened_search": { "type": "boolean", "description": "Recipe 2: без seniority. Всегда true" },
+                  "parent_domain_search": { "type": "boolean", "description": "Recipe 3: true если Pre-Enricher дал parent_domain" },
+                  "person_name_search": { "type": "boolean", "description": "Recipe 4: true если Pre-Enricher дал known_decision_makers" },
+                  "platform_user_filter": { "type": "boolean", "description": "true если вертикаль adult (платформы с user-generated profiles)" }
+                }
+              },
+              "patterns_used": {
+                "type": "object",
+                "description": "Какие паттерны ФАКТИЧЕСКИ использованы и результат каждого",
+                "properties": {
+                  "standard_search": {
+                    "type": "object",
+                    "properties": {
+                      "used": { "type": "boolean" },
+                      "result": { "type": "integer", "description": "Количество leads после этого шага" },
+                      "skipped_reason": { "type": ["string", "null"], "description": "Если used=false, почему пропущен" }
+                    }
+                  },
+                  "broadened_search": {
+                    "type": "object",
+                    "properties": {
+                      "used": { "type": "boolean" },
+                      "result": { "type": "integer" },
+                      "skipped_reason": { "type": ["string", "null"] }
+                    }
+                  },
+                  "parent_domain_search": {
+                    "type": "object",
+                    "properties": {
+                      "used": { "type": "boolean" },
+                      "result": { "type": "integer" },
+                      "domain_used": { "type": ["string", "null"], "description": "Какой parent domain использован" },
+                      "skipped_reason": { "type": ["string", "null"] }
+                    }
+                  },
+                  "person_name_search": {
+                    "type": "object",
+                    "properties": {
+                      "used": { "type": "boolean" },
+                      "result": { "type": "integer" },
+                      "names_searched": { "type": "array", "items": { "type": "string" } },
+                      "skipped_reason": { "type": ["string", "null"] }
+                    }
+                  },
+                  "platform_user_filter": {
+                    "type": "object",
+                    "properties": {
+                      "used": { "type": "boolean" },
+                      "filtered_count": { "type": "integer", "description": "Сколько platform users отфильтровано" },
+                      "skipped_reason": { "type": ["string", "null"] }
+                    }
+                  }
+                }
+              },
+              "pattern_detected": {
+                "type": ["string", "null"],
+                "enum": ["WRONG_ORG_MAPPING", "BRAND_NOT_EMPLOYER", "SENIORITY_FILTER_KILLS", "PLATFORM_USERS_ONLY", "GHOST_ENTITY", null],
+                "description": "Какой из 5 паттернов отказа обнаружен (null если стандартный поиск сработал)"
+              },
+              "escalation_depth": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5,
+                "description": "На каком шаге Fallback Ladder остановились (1=standard, 5=blind_spot)"
+              },
+              "all_available_exhausted": {
+                "type": "boolean",
+                "description": "true если все доступные (available=true) паттерны были использованы ИЛИ поиск завершился успешно раньше. false + final_leads=0 → agent не исчерпал все варианты (процессная ошибка)"
+              },
+              "final_leads": { "type": "integer", "description": "Итоговое количество leads после всех шагов и фильтров" }
+            }
+          }
+        }
       }
     },
     "leads": {
@@ -37,7 +123,7 @@
           "has_email": { "type": "boolean", "description": "Apollo показывает доступность, но не сам email" },
           "linkedin_url": { "type": ["string", "null"] },
           "dedup_status": { "type": "string", "enum": ["NEW", "ALREADY_IN_CRM", "ALREADY_IN_APOLLO"] },
-          "flags": { "type": "array", "items": { "type": "string", "enum": ["RETAIL", "INTERN", "UNRELATED", "EX-", "BROADENED_SEARCH"] } },
+          "flags": { "type": "array", "items": { "type": "string", "enum": ["RETAIL", "INTERN", "UNRELATED", "EX-", "BROADENED_SEARCH", "PLATFORM_USER", "PARENT_DOMAIN_FOUND"] } },
           "search_broadened": { "type": "boolean" }
         }
       }
@@ -54,7 +140,51 @@
         "new": 9,
         "already_in_crm": 2,
         "already_in_apollo": 1,
-        "flagged": 1
+        "flagged": 1,
+        "domains_audit": [
+          {
+            "domain": "betano.com",
+            "patterns_available": {
+              "standard_search": true,
+              "broadened_search": true,
+              "parent_domain_search": false,
+              "person_name_search": false,
+              "platform_user_filter": false
+            },
+            "patterns_used": {
+              "standard_search": {"used": true, "result": 8, "skipped_reason": null},
+              "broadened_search": {"used": false, "result": 0, "skipped_reason": "standard_sufficient"},
+              "parent_domain_search": {"used": false, "result": 0, "domain_used": null, "skipped_reason": "not_available"},
+              "person_name_search": {"used": false, "result": 0, "names_searched": [], "skipped_reason": "not_available"},
+              "platform_user_filter": {"used": false, "filtered_count": 0, "skipped_reason": "not_adult_vertical"}
+            },
+            "pattern_detected": null,
+            "escalation_depth": 1,
+            "all_available_exhausted": true,
+            "final_leads": 8
+          },
+          {
+            "domain": "stake.com",
+            "patterns_available": {
+              "standard_search": true,
+              "broadened_search": true,
+              "parent_domain_search": false,
+              "person_name_search": false,
+              "platform_user_filter": false
+            },
+            "patterns_used": {
+              "standard_search": {"used": true, "result": 0, "skipped_reason": null},
+              "broadened_search": {"used": true, "result": 0, "skipped_reason": null},
+              "parent_domain_search": {"used": false, "result": 0, "domain_used": null, "skipped_reason": "not_available"},
+              "person_name_search": {"used": false, "result": 0, "names_searched": [], "skipped_reason": "not_available"},
+              "platform_user_filter": {"used": false, "filtered_count": 0, "skipped_reason": "not_adult_vertical"}
+            },
+            "pattern_detected": "GHOST_ENTITY",
+            "escalation_depth": 5,
+            "all_available_exhausted": true,
+            "final_leads": 0
+          }
+        ]
       },
       "leads": [
         {
