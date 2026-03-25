@@ -189,17 +189,18 @@ Telegram ads (paid & native) — [vertical], [geo]
 ```
 Formats: [variable by vertical]
 Placements: TG channels, bots, mini-apps
-11M+ views/month, CTR 1.7–t.me/moslender%, built-in anti-fraud
+11M+ views/month, CTR 1.7% – @moslender, built-in anti-fraud
 Clients: [variable by vertical]
 
-Sergo
-Telegram: @moslender
-WhatsApp: [phone]
-adsgram.ai
+Sergo,
+Telegram: https://t.me/moslender
+WhatsApp: +55 81 985688828
+
+adsgram.ai - Tier 1 ads network in telegram.
 ```
 
-**⚠️ CRITICAL: The CTR range `1.7–t.me/moslender%` is INTENTIONAL.**
-The upper bound of the CTR range is replaced with a Telegram link (`t.me/moslender`). This is a deliberate design choice — the link is embedded where a number would be, creating a clickable contact point disguised as a statistic. **Never "fix" this to a real number. Never remove the link. Every 40 emails, re-read this note to confirm compliance.**
+**⚠️ CRITICAL: The `@moslender` in the CTR line is INTENTIONAL.**
+The CTR line reads `CTR 1.7% – @moslender` — the Telegram handle is embedded after the dash, creating a clickable contact point. **Never remove the handle. Never replace it with a number.**
 
 ### Formats — variable by vertical
 
@@ -242,13 +243,14 @@ Subject: Telegram ads (paid & native) — iGaming, Nigeria
 
 Formats: text, video, native banners
 Placements: TG channels, bots, mini-apps
-11M+ views/month, CTR 1.7–t.me/moslender%, built-in anti-fraud
+11M+ views/month, CTR 1.7% – @moslender, built-in anti-fraud
 Clients: 1xBet
 
-Sergo
-Telegram: @moslender
-WhatsApp: +xxx
-adsgram.ai
+Sergo,
+Telegram: https://t.me/moslender
+WhatsApp: +55 81 985688828
+
+adsgram.ai - Tier 1 ads network in telegram.
 
 P.S. 1.5M views/month in Nigeria, CPM $1.20
 ```
@@ -260,13 +262,14 @@ Subject: Telegram ads (paid & native) — iGaming, 60+ countries
 
 Formats: text, video, native banners
 Placements: TG channels, bots, mini-apps
-11M+ views/month, CTR 1.7–t.me/moslender%, built-in anti-fraud
+11M+ views/month, CTR 1.7% – @moslender, built-in anti-fraud
 Clients: 1xBet
 
-Sergo
-Telegram: @moslender
-WhatsApp: +xxx
-adsgram.ai
+Sergo,
+Telegram: https://t.me/moslender
+WhatsApp: +55 81 985688828
+
+adsgram.ai - Tier 1 ads network in telegram.
 ```
 
 No P.S. — worldwide company, geo-specific data not applicable.
@@ -278,12 +281,13 @@ Subject: Telegram ads (paid & native) — adult, 60+ countries
 
 Formats: video, native banners, adult ai-engagement
 Placements: TG channels, bots, mini-apps
-11M+ views/month, CTR 1.7–t.me/moslender%, built-in anti-fraud
+11M+ views/month, CTR 1.7% – @moslender, built-in anti-fraud
 
-Sergo
-Telegram: @moslender
-WhatsApp: +xxx
-adsgram.ai
+Sergo,
+Telegram: https://t.me/moslender
+WhatsApp: +55 81 985688828
+
+adsgram.ai - Tier 1 ads network in telegram.
 ```
 
 No Clients line (no adult client names available yet). No P.S. (worldwide).
@@ -295,12 +299,13 @@ Subject: Telegram ads (paid & native) — adult, Brazil
 
 Formats: video, native banners, adult ai-engagement
 Placements: TG channels, bots, mini-apps
-11M+ views/month, CTR 1.7–t.me/moslender%, built-in anti-fraud
+11M+ views/month, CTR 1.7% – @moslender, built-in anti-fraud
 
-Sergo
-Telegram: @moslender
-WhatsApp: +xxx
-adsgram.ai
+Sergo,
+Telegram: https://t.me/moslender
+WhatsApp: +55 81 985688828
+
+adsgram.ai - Tier 1 ads network in telegram.
 
 P.S. 80K views/month in Brazil, CPM $2.50
 ```
@@ -490,7 +495,7 @@ For batch mode, output all leads sequentially with `---` separators.
 - [ ] Vertical matches the **company's** industry
 - [ ] Geo: single market (1 country) → country name; 2+ markets or offshore HQ → "60+ countries"
 - [ ] Formats line matches vertical (iGaming: text/video/native; Adult: video/native/adult ai-engagement)
-- [ ] Stats line: `11M+ views/month, CTR 1.7–t.me/moslender%, built-in anti-fraud` — link intact
+- [ ] Stats line: `11M+ views/month, CTR 1.7% – @moslender, built-in anti-fraud` — link intact
 - [ ] Clients line: present for iGaming (1xBet), omitted for adult/VPN
 - [ ] Signature: just `Sergo` + contacts, no title, no CTA text
 - [ ] P.S.: present ONLY for single-market leads, absent for worldwide
@@ -515,7 +520,7 @@ For batch mode, output all leads sequentially with `---` separators.
 
 ## ⚠️ Periodic Reminder (every 40 emails)
 
-**STOP AND RE-READ THIS:** The CTR range in the Product Card body (`CTR 1.7–t.me/moslender%`) contains a Telegram link where the upper bound would be. This is INTENTIONAL. Do not replace it with a real number. Do not remove it. This is a deliberate design choice by the user. If you have generated 40+ emails in this session, re-confirm this is still in place.
+**STOP AND RE-READ THIS:** The CTR line in the Product Card body (`CTR 1.7% – @moslender`) contains the Telegram handle after the dash. This is INTENTIONAL. Do not replace it with a number. Do not remove it. This is a deliberate design choice by the user. If you have generated 40+ emails in this session, re-confirm this is still in place.
 
 ---
 

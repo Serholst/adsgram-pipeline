@@ -49,7 +49,7 @@
 
 Прочитай prospector SKILL.md — **Stage 5 (Report)**. Тебе нужны:
 
-- **Колонки CRM** — определения 14 колонок и что в них писать
+- **Колонки CRM** — определения 16 колонок и что в них писать
 - **SKIP leads** — обязательно записываются с причиной в Notes
 - **Priority sorting** — Director/VP первыми, generic roles последними
 - **Company DB update** — обновление через `python3 tools/sheets_helper.py companydb-append-rows`
@@ -76,13 +76,15 @@ agent-system/contracts/crm-writer-input.json — объединённый пак
 | Колонка | Источник из контракта | Заметки |
 |---------------|----------------------|---------|
 | Company | `company` | required |
-| Vertical | определи по company_domain | iGaming / VPN / Crypto |
+| Vertical | определи по company_domain | iGaming / VPN / Crypto / Adult |
 | Country | `country` | может быть null |
 | Name | `first_name` + `last_name` | required |
 | Title | `title` | required |
 | Email | `email` | null допустим |
 | Email Status | `email_status` | verified / catchall / unverified / unavailable |
-| Web Search | собери из `linkedin_url`, `twitter`, `whatsapp`, `conference_appearances`, `contact_sources` | Формат: `LinkedIn: [url] \| Twitter: @handle \| Source: [sources]` |
+| Socials | собери из `linkedin_url`, `twitter`, `instagram`, `telegram_handle` + company `social_links` из Pre-Enricher | Формат: `LinkedIn: [url] \| TG: @handle \| Twitter: @handle \| IG: @handle`. Только ссылки на соцсети, без источников |
+| Alt Contacts | собери из `phone`, `whatsapp`, company emails (`general_email`, `press_email`, `partnerships_email`) из Pre-Enricher | Формат: `Phone: +number \| WhatsApp: +number \| Alt email: press@company.com`. Опционально — заполняй только если данные есть |
+| Sources & Signals | собери из `conference_appearances`, `contact_sources`, персонализационные сигналы (hiring, sponsorship) | Формат: `Source: Apollo, ZoomInfo \| Conference: SiGMA 2025 \| Hiring: UA Manager role`. Источники + сигналы для outreach |
 | Lead Status | `lead_status` | Verified / Partially verified / Not verified |
 | Stage | пусто | заполняется на этапе outreach |
 | First Contact Date | пусто | заполняется при отправке |
@@ -170,7 +172,7 @@ SKIP-лиды (из входных данных, если Orchestrator их вк
 
 - Lead Status: "Skip"
 - Notes: обязательно причина (из verification_note или flags)
-- Email, Web Search: заполни если есть
+- Email, Socials, Alt Contacts, Sources & Signals: заполни если есть
 - Stage, dates, CTA: пусто
 
 ### Обновление Company DB

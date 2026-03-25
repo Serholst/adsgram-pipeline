@@ -356,10 +356,12 @@ The CRM lives in Google Sheets (access via `tools/sheets_helper.py`).
 
 Read existing data and append new leads. The CRM has these columns:
 
-Company | Vertical | Country | Name | Title | Email | Email Status | Web Search | Lead Status | Stage | First Contact Date | Last Activity Date | Suggested CTA | Notes
+Company | Vertical | Country | Name | Title | Email | Email Status | Socials | Alt Contacts | Sources & Signals | Lead Status | Stage | First Contact Date | Last Activity Date | Suggested CTA | Notes
 
 **Column definitions:**
-- **Web Search**: All contact channels found during Stage 3 discovery. Format: `LinkedIn: [url] | Twitter: @handle | WhatsApp: +number | IG: @handle | Source: [Apollo/Web/Conference]`. This replaces the old "LinkedIn" column — LinkedIn URLs are now stored here alongside all other web-discovered contacts.
+- **Socials**: Social media profile links only. Format: `LinkedIn: [url] | TG: @handle | Twitter: @handle | IG: @handle`. Only profile links — no sources, no phone numbers.
+- **Alt Contacts**: Phone, WhatsApp, alternative emails found during discovery. Format: `Phone: +number | WhatsApp: +number | Alt email: press@company.com`. Optional — fill only if data available.
+- **Sources & Signals**: Source attribution + personalization signals for outreach. Format: `Source: Apollo, ZoomInfo | Conference: SiGMA 2025 | Hiring: UA Manager role in Lagos`.
 - **Email Status**: "verified", "verified (CATCHALL)", "personal", "unavailable"
 - **Lead Status**: Set based on Stage 3 verification results (Verified/Partially verified/Not verified/Needs review/Skip)
 - **Stage**: leave empty (will be filled during outreach)
@@ -378,7 +380,9 @@ Company | Vertical | Country | Name | Title | Email | Email Status | Web Search 
   - "SKIP. Role discrepancy — Apollo says Media Buyer, actually Administrative Analyst."
   - "SKIP. Duplicate — same person found under different Apollo record."
 - **Email**: fill if available (even for skipped leads — useful for future dedup)
-- **Web Search**: fill with any discovered channels (even for skipped leads)
+- **Socials**: fill with any discovered social links (even for skipped leads)
+- **Alt Contacts**: fill with phone/WhatsApp if available
+- **Sources & Signals**: fill with sources and signals (even for skipped leads)
 - All other fields (Stage, dates, CTA): leave empty
 
 **Stage column values:**

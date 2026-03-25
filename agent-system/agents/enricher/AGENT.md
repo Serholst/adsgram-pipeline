@@ -87,7 +87,7 @@ agent-system/contracts/enricher-output.json
 - `verification_status` — нужен Orchestrator для маппинга lead_status
 - `verification_note` — персонализационные сигналы
 - `contacts_from_qualifier` — контакты, найденные на предыдущем этапе
-  (twitter, sources, conference_appearances)
+  (linkedin_url, twitter, instagram, telegram_handle, whatsapp, sources, conference_appearances)
 
 Orchestrator собирает пакет для CRM из твоего output +
 qualifier output. Если passthrough-поля потеряны — сборка сломается.

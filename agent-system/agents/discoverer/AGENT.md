@@ -155,12 +155,14 @@ Web-discovered лиды → только A (если есть контакт) и
 Для каждого лида:
 - `verification_status` — VERIFIED / PARTIALLY_VERIFIED / NOT_VERIFIED / LEFT_COMPANY / SKIP
 - `verification_note` — краткое пояснение + персонализационные сигналы
-- `contacts_found.linkedin_url` — URL профиля
-- `contacts_found.twitter` — handle
+- `contacts_found.linkedin_url` — URL профиля → CRM: Socials
+- `contacts_found.twitter` — handle → CRM: Socials
+- `contacts_found.instagram` — handle если найден → CRM: Socials
+- `contacts_found.telegram_handle` — @handle если найден → CRM: Socials
 - `contacts_found.email_pattern` — обнаруженный email pattern
-- `contacts_found.whatsapp` — номер если найден
-- `contacts_found.conference_appearances` — список конференций
-- `contacts_found.sources` — откуда что найдено
+- `contacts_found.whatsapp` — номер если найден → CRM: Alt Contacts
+- `contacts_found.conference_appearances` — список конференций → CRM: Sources & Signals
+- `contacts_found.sources` — откуда что найдено → CRM: Sources & Signals
 - `bucket` — A / B / SKIP
 - `bucket_reason` — почему этот бакет
 - `source` — APOLLO или WEB

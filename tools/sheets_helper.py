@@ -40,7 +40,8 @@ CRM_SHEET_NAME = "Leads"
 COMPANYDB_SHEET_NAME = "Top iGaming Operators"
 CRM_EXPECTED_HEADERS = [
     "Company", "Vertical", "Country", "Name", "Title",
-    "Email", "Email Status", "Web Search", "Lead Status", "Stage",
+    "Email", "Email Status", "Socials", "Alt Contacts",
+    "Sources & Signals", "Lead Status", "Stage",
     "First Contact Date", "Last Activity Date", "Suggested CTA", "Notes",
 ]
 
@@ -377,7 +378,7 @@ def cmd_setup_crm(sheet_id: str):
         ws = ss.add_worksheet(title=CRM_SHEET_NAME, rows=1000, cols=len(CRM_EXPECTED_HEADERS))
 
     ws.update([CRM_EXPECTED_HEADERS], value_input_option="USER_ENTERED")
-    ws.format("A1:N1", {"textFormat": {"bold": True}})
+    ws.format("A1:P1", {"textFormat": {"bold": True}})
     _output({"status": "initialized", "sheet_name": CRM_SHEET_NAME, "columns": len(CRM_EXPECTED_HEADERS)})
 
 

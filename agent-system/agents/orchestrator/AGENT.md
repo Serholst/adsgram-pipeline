@@ -96,8 +96,14 @@ agent-system/contracts/crm-writer-input.json из двух источников:
 - `email` ← `contacts_found.email_pattern`
 - `email_source` ← `"qualifier_pattern"`
 - `lead_status` ← маппинг verification_status (см. таблицу ниже)
-- `conference_appearances` ← `contacts_found.conference_appearances`
-- `contact_sources` ← `contacts_found.sources`
+- `linkedin_url` ← `contacts_found.linkedin_url` → CRM: Socials
+- `twitter` ← `contacts_found.twitter` → CRM: Socials
+- `instagram` ← `contacts_found.instagram` → CRM: Socials
+- `telegram_handle` ← `contacts_found.telegram_handle` → CRM: Socials
+- `whatsapp` ← `contacts_found.whatsapp` → CRM: Alt Contacts
+- `phone` ← `contacts_found.phone` (если есть) → CRM: Alt Contacts
+- `conference_appearances` ← `contacts_found.conference_appearances` → CRM: Sources & Signals
+- `contact_sources` ← `contacts_found.sources` → CRM: Sources & Signals
 
 **Bucket B** (из enricher-output.json):
 
@@ -107,7 +113,12 @@ agent-system/contracts/crm-writer-input.json из двух источников:
   (по enrichment_flags: FREE_PATH_USED → free_path)
 - `lead_status` ← маппинг verification_status (Enricher прокидывает
   его из discoverer-output — используй прокинутое значение)
-- `conference_appearances`, `contact_sources` ← из `contacts_from_qualifier`
+- `linkedin_url` ← из Enricher или `contacts_from_qualifier` → CRM: Socials
+- `twitter` ← из `contacts_from_qualifier` → CRM: Socials
+- `instagram` ← из `contacts_from_qualifier` → CRM: Socials
+- `telegram_handle` ← из `contacts_from_qualifier` → CRM: Socials
+- `whatsapp` ← из `contacts_from_qualifier` → CRM: Alt Contacts
+- `conference_appearances`, `contact_sources` ← из `contacts_from_qualifier` → CRM: Sources & Signals
 
 ### Маппинг verification_status → lead_status
 

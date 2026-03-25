@@ -47,7 +47,9 @@
           "phone": { "type": ["string", "null"] },
           "linkedin_url": { "type": ["string", "null"] },
           "twitter": { "type": ["string", "null"] },
-          "whatsapp": { "type": ["string", "null"] },
+          "instagram": { "type": ["string", "null"], "description": "Instagram handle → CRM: Socials" },
+          "telegram_handle": { "type": ["string", "null"], "description": "Telegram @handle → CRM: Socials" },
+          "whatsapp": { "type": ["string", "null"], "description": "WhatsApp number → CRM: Alt Contacts" },
           "conference_appearances": { "type": "array", "items": { "type": "string" } },
           "contact_sources": { "type": "array", "items": { "type": "string" }, "description": "Все источники контактной информации" },
           "enrichment_flags": {

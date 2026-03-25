@@ -26,7 +26,7 @@
 | `crm-read-headers` | Заголовки CRM → JSON |
 | `crm-append-rows <json-file>` | Добавить строки в CRM из JSON-файла |
 | `crm-dedup-set` | Dedup sets: emails + name×company пары |
-| `crm-validate-headers` | Проверка структуры CRM (14 колонок) |
+| `crm-validate-headers` | Проверка структуры CRM (16 колонок: Company, Vertical, Country, Name, Title, Email, Email Status, Socials, Alt Contacts, Sources & Signals, Lead Status, Stage, First Contact Date, Last Activity Date, Suggested CTA, Notes) |
 | `crm-row-count` | Количество строк в CRM |
 | `companydb-read-all` | Все строки Company DB → JSON |
 | `companydb-domains` | ВСЕ домены компаний (без фильтрации) |

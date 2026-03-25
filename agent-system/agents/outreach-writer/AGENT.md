@@ -93,9 +93,13 @@ python3 tools/sheets_helper.py crm-read-all
 
 - **Name, Title, Company, Country** — для персонализации
 - **Email** — адрес получателя (To:)
-- **Web Search** — контакты и источники, найденные на этапе
-  верификации. Conference appearances, LinkedIn URL,
-  Twitter — всё это сигналы для opening line.
+- **Socials** — ссылки на соцсети (LinkedIn, TG, Twitter, IG).
+  Используй для поиска контактов и верификации.
+- **Alt Contacts** — телефон, WhatsApp, альтернативные email.
+  Используй для альтернативных каналов outreach.
+- **Sources & Signals** — откуда нашли лида + сигналы:
+  conference appearances, sponsorship deals, hiring activity —
+  всё это сигналы для opening line.
 - **Lead Status** — Verified vs Partially verified (влияет на
   уверенность в персонализации)
 - **Notes** — verification_note, дополнительный контекст
@@ -139,11 +143,11 @@ NEXT STEP: [что делать если ответит / не ответит]
 - Max поисковых запросов на лида: 3 (верификация + сигнал)
 - Max суммарно за сессию: 100 запросов
 - Если сигнал не найден за 3 запроса — используй данные
-  из Web Search колонки CRM (conference appearances, sources)
+  из колонки Sources & Signals в CRM (conference appearances, sources)
 
 ### Порядок поиска сигнала
 
-1. Сначала проверь колонку Web Search в CRM — часто сигнал уже есть
+1. Сначала проверь колонку Sources & Signals в CRM — часто сигнал уже есть
 2. Если нет → web search: `"[Company]" 2025 2026 expansion marketing`
 3. Если нет → web search: `"[Name]" "[Company]" speaker OR conference`
 4. Если нет → используй данные о компании (vertical, country, size)
@@ -159,9 +163,10 @@ NEXT STEP: [что делать если ответит / не ответит]
 
 ### Персонализация через CRM-данные
 
-В колонке Web Search есть контакты и источники, найденные
+В колонке Sources & Signals есть источники и сигналы, найденные
 на этапе верификации. Conference appearances, sponsorship deals,
 hiring activity — используй как сигнал для opening line.
+В колонке Socials — ссылки на соцсети для верификации и контакта.
 Чем конкретнее сигнал, тем выше шанс ответа.
 
 ### Адаптация по результатам прошлых писем
@@ -207,7 +212,7 @@ hiring activity — используй как сигнал для opening line.
    нет хорошего сигнала — рекомендую qualification-подход
    вместо direct pitch, или подождать новых данных»
 4. **Данные в CRM неполные** для качественного письма
-   (нет country, нет Web Search, нет email) → конкретный вопрос:
+   (нет country, нет Sources & Signals, нет email) → конкретный вопрос:
    «для 3 лидов нет country — писать на английском с regional
    average, или уточнить страну?»
 
@@ -239,7 +244,7 @@ hiring activity — используй как сигнал для opening line.
 
 1. Запиши лог сессии в `logs/sessions/` по шаблону `_template.json`
 2. Если данные в CRM были неполными для качественного письма
-   (нет Web Search, нет country) — запиши feedback в `logs/feedback/`
+   (нет Sources & Signals, нет country) — запиши feedback в `logs/feedback/`
    с `to_agent: "crm-writer"`
 3. Если пользователь потом сообщит результаты (ответы/отказы) —
    обнови лог: какой сигнал/CTA сработал, какой нет
