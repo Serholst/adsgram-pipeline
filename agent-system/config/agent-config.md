@@ -46,28 +46,7 @@
 
 ## ICP (Ideal Customer Profile)
 
-### Вертикали
-- **Primary:** iGaming (online betting, casinos, sports betting), VPN
-- **Secondary:** crypto/web3
-
-### Целевые роли (по приоритету)
-1. Media Buyer / Traffic Manager
-2. User Acquisition (UA) Manager
-3. Performance Marketing Manager
-4. Growth Manager / Growth Marketing Manager
-5. Acquisition Marketing Manager
-6. Digital Marketing Manager (с фокусом на paid/performance)
-7. Marketing Director (если нет нижестоящих контактов)
-8. BD Manager / Sales Manager (fallback)
-
-### Целевые seniorities
-- Manager, Senior, Director, VP
-
-### Целевые GEO
-- **LATAM:** Brazil, Mexico, Argentina, Colombia
-- **Asia:** India, Singapore, Indonesia, Philippines, Vietnam
-- **Europe:** Italy, Spain, CIS region
-- **Africa:** Nigeria, Ghana, Egypt, Kenya, South Africa, Tanzania, Uganda
+→ `agent-system/reference/icp.md` — полная версия: вертикали, роли, seniorities, GEOs, B2B exclusion criteria, Apollo search parameters.
 
 ## Лимиты
 

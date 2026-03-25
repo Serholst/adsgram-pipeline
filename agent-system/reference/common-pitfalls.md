@@ -1,0 +1,21 @@
+# Common Pitfalls
+
+Based on experience with this pipeline:
+
+- **Searching companies already in Company DB** — this happened when the exclusion set was loaded but company selection was done visually instead of programmatically. The fix: always run the validation gate in Step 1d. If you find yourself selecting companies by scrolling through a list and picking names, stop — you're about to repeat this mistake. Let the code do the filtering.
+- **Searching companies already in CRM** — this happened when only Company DB was used as exclusion source, but CRM was only checked at the individual lead level before enrichment. Companies that already had leads in CRM were re-searched via Apollo people search, wasting time. The fix: Step 1b now also builds `crm_companies` set, and Step 1d validation gate checks candidates against BOTH `exclusion_domains` (operators file) AND `crm_companies` (CRM). Both files are exclusion sources at the company level.
+- **Enriching contacts already in CRM** — wasted credits. The fix: always load CRM dedup set in Step 1b and check every lead against `crm_emails` and `crm_names` before enrichment.
+- **Crypto casinos** (Stake, BC.Game, 1xBet) have almost zero Apollo coverage — they're deliberately private. Warn the user upfront.
+- **VPN search with "cybersecurity" keyword** returns too many irrelevant results. Use only "VPN" as keyword tag. Focus on companies which provide VPN as a Service.
+- **African operators** — many results are retail Sales Managers, not digital marketing roles. Filter carefully. Apollo coverage in Africa is extremely weak: in the Nigeria session, only 6 of 23 companies had any Apollo people results, and phone numbers returned 0 out of 17 enrichments. Always supplement with web search.
+- **Apollo search shows `has_email: true`** but enrichment may return null — search metadata can be stale.
+- **"Ex-" in headline** — the person may have left the company. Flag these. In the Nigeria session, George Mbam was listed under betBonanza but had actually moved to GinjaBet — caught during verification.
+- **Catchall domains** — common at large enterprises (BetWinner, AccessBET, NairaBET). The email format is usually correct but can't be individually verified. Flag in Notes and Email Status.
+- **bulk_match unreliable** — `apollo_people_bulk_match` with partial data (first_name + domain only) often returns null. Always use `apollo_people_match` with Apollo person ID for reliable enrichment.
+- **Title inflation in Apollo** — Apollo titles may not match reality (e.g., "Executive Officer" vs actual "Executive Assistant"). Always verify via web search.
+- **Re-query by email is free** — if you need to recover data for already-enriched contacts, query by email. No additional credits consumed.
+- **Enriching contacts already in Apollo** — before this check was added, leads that had been enriched in previous sessions (but excluded from CRM as Skip) were re-enriched, wasting credits. The fix: always load Apollo contacts in Step 1e and check every lead against `apollo_contact_emails` and `apollo_contact_names` before enrichment.
+- **Not recording SKIP leads in CRM** — leads marked Skip (no email, irrelevant role, left company) were not written to CRM, causing them to be re-found and re-enriched in future sessions. The fix: ALL leads including Skips are now written to CRM with a reason in Notes. This makes the CRM the single source of truth for dedup.
+- **Creating duplicate output files** — do NOT create a separate "session report" xlsx alongside the CRM. The CRM is the single deliverable. Summary stats and session metadata go in chat, not in extra files.
+- **Enriching leads that already have web-discovered contacts** — in v1.1.0, enrichment happened before web search, so all leads were enriched blindly. Now web search happens first. If a lead already has a verified email from web discovery, skip Apollo enrichment.
+- **Too-narrow Apollo search filters** — initial searches with strict title + seniority + email_status filters may return very few results (especially in Africa/LATAM). If a batch returns <3 results, re-run with broader filters: remove email_status, expand titles (add "affiliate", "partnerships", "business development", "head of marketing", "CMO"), remove seniority filter.

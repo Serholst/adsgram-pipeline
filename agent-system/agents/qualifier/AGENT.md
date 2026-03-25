@@ -1,8 +1,8 @@
 # Agent: Lead Qualifier — DEPRECATED (v1.5.0)
 
 > **This agent has been eliminated.** All responsibilities (contact discovery,
-> role verification, bucket sort) are now performed by Pre-Enricher Этап B.
-> See `agent-system/agents/pre-enricher/AGENT.md` → Этап B.
+> role verification, bucket sort) are now performed by Discoverer Agent.
+> See `agent-system/agents/discoverer/AGENT.md`.
 >
 > This file is kept for reference only. Do NOT use this agent.
 

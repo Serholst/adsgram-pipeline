@@ -43,22 +43,30 @@
 ## Бизнес-логика
 
 Прочитай:
-- prospector SKILL.md — ICP (roles, seniorities) для оценки релевантности
-- apollo-search-patterns.md — `domains_audit` из Searcher содержит
+- `agent-system/reference/icp.md` — roles и seniorities для оценки релевантности и bucket assignment
+- `agent-system/reference/apollo-search-patterns.md` — `domains_audit` из Searcher содержит
   `pattern_detected` — используй для 0-result company discovery
 
 ## Конфигурация
 
 Прочитай agent-system/config/agent-config.md. Тебе нужны:
-- **ICP** — roles и seniorities для bucket assignment
 - **Пути** — логи
 - **Язык** — русский с пользователем, английский в JSON
 
 ## Вход
 
 `searcher-output.json` от Orchestrator — массив лидов с полями:
-`first_name`, `last_name`, `title`, `company`, `company_domain`.
+`first_name`, `last_name`, `title`, `company`, `company_domain`,
+`seniority`, `has_email`, `linkedin_url`, `flags`.
 Плюс `domains_audit` с информацией о паттернах отказа.
+
+Ключевое поле для оптимизации:
+
+- `has_email` — подсказка от Apollo (email доступен для платного обогащения).
+  Если `has_email: true` и email не найден бесплатно → лид уверенно в Bucket B
+  (Apollo скорее всего вернёт email при обогащении). Не трать дополнительные
+  web-запросы на поиск email pattern для таких лидов — сосредоточься на
+  верификации роли. Учитывай: Apollo metadata может быть stale.
 
 ## Что искать для каждого лида
 
@@ -167,7 +175,10 @@ Web-discovered лиды → только A (если есть контакт) и
 - `bucket` — A / B / SKIP
 - `bucket_reason` — почему этот бакет
 - `source` — APOLLO или WEB
-- `web_discovered_leads[]` — новые лиды для компаний с 0 Apollo
+
+Web-discovered лиды включаются в основной массив `leads[]` с `source: "WEB"`.
+НЕ создавай отдельный массив `web_discovered_leads`. Лиды с `source: "WEB"`
+отличаются тем, что у них `apollo_person_id: null` → только Bucket A или Skip.
 
 ## Критерии достаточности
 

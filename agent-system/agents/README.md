@@ -54,12 +54,17 @@ agent-system/agents/
     └── AGENT.md
 
 agent-system/skills/
-├── adsgram-prospector/
+├── prospector/
+│   ├── SKILL.md
+│   └── apollo-search-patterns.md
+├── outreach/
 │   └── SKILL.md
-├── adsgram-outreach/
+├── autopipeline/
 │   └── SKILL.md
-└── adsgram-autopipeline/
-    └── SKILL.md
+├── gmail-drafter/
+│   └── SKILL.md
+└── telegram-sender/
+    └── SKILL.md          ← DEPRECATED (не связан с основным pipeline)
 
 agent-system/contracts/
 ├── pre-enricher-output.json
@@ -85,27 +90,24 @@ logs/
 | Артефакт | Где живёт | Кто пишет | Кто читает |
 |----------|-----------|-----------|------------|
 | **AGENT.md** | agent-system/agents/{name}/ | Человек | Агент при запуске |
-| **SKILL.md** | .agent-system/skills/agent-system/skills/ | Человек | Агент при запуске |
+| **SKILL.md** | agent-system/skills/{name}/ | Человек | Агент при запуске |
 | **Контракт** | agent-system/contracts/ | Человек | Агенты (вход/выход) |
 | **Лог сессии** | logs/sessions/ | Агент | Тот же агент в следующий раз |
 | **Feedback** | logs/feedback/ | Агент | Другой агент |
 | **Ретроспектива** | logs/retrospectives/ | Оркестратор | Оркестратор + человек |
 
-## Связь агентов со скиллами
+## Связь агентов с reference-документами
 
-| Агент | Скилл-источник | Секции |
-|-------|---------------|--------|
-| Pre-Enricher | `agent-system/skills/adsgram-prospector/SKILL.md` | Stage 0 (Pre-Enrichment) |
-|  | `agent-system/skills/adsgram-prospector/apollo-search-patterns.md` | Patterns 1-2 (what Searcher expects) |
-| Searcher | `agent-system/skills/adsgram-prospector/SKILL.md` | Stage 1 (Intake), Stage 2 (Search) |
-|  | `agent-system/skills/adsgram-prospector/apollo-search-patterns.md` | 5 failure patterns, fallback ladder, recipes |
-| Discoverer | `agent-system/skills/adsgram-prospector/SKILL.md` | Discovery (contacts + verify + bucket sort) |
-|  | `agent-system/skills/adsgram-prospector/apollo-search-patterns.md` | domains_audit for 0-result company discovery |
-| ~~Qualifier~~ | ELIMINATED v1.5.0 — absorbed into Discoverer | — |
-| Enricher | `agent-system/skills/adsgram-prospector/SKILL.md` | Stage 4 (Enrich), Credit Management |
-| CRM Writer | `agent-system/skills/adsgram-prospector/SKILL.md` | Stage 5 (Report) |
-| Outreach Writer | `agent-system/skills/adsgram-outreach/SKILL.md` | Целиком |
-| Orchestrator | `agent-system/skills/adsgram-autopipeline/SKILL.md` | Архитектура, Checkpoints |
+| Агент | Reference-документы |
+|-------|---------------------|
+| Pre-Enricher | `reference/icp.md`, `reference/apollo-search-patterns.md`, `reference/company-db.md` |
+| Searcher | `reference/icp.md`, `reference/apollo-search-patterns.md`, `reference/company-db.md`, `reference/common-pitfalls.md` |
+| Discoverer | `reference/icp.md`, `reference/apollo-search-patterns.md` |
+| ~~Qualifier~~ | ELIMINATED v1.5.0 — absorbed into Discoverer |
+| Enricher | `reference/icp.md`, `reference/credit-management.md`, `reference/common-pitfalls.md` |
+| CRM Writer | `reference/crm-columns.md`, `reference/company-db.md` |
+| Outreach Writer | `reference/outreach-templates.md`, `reference/outreach-rules.md`, `reference/outreach-benchmarks.md` |
+| Orchestrator | `reference/icp.md` + `skills/autopipeline/SKILL.md` |
 
 ## Система памяти
 
@@ -122,7 +124,7 @@ logs/
 **Ретроспективы** — оркестратор после полного цикла собирает метрики
 от всех агентов и генерирует ретроспективу: воронка, ресурсы,
 что сработало, что нет, рекомендации. Если паттерн повторяется 3+ раз
-в логах — переносится в Common Pitfalls в SKILL.md.
+в логах — переносится в `reference/common-pitfalls.md`.
 
 ## Порядок вызова
 
@@ -136,6 +138,6 @@ logs/
 ```
 
 **Особенность:** Outreach Writer не получает JSON-контракт. Он читает
-лидов напрямую из CRM (Excel), фильтруя по Lead Status = "Verified" /
+лидов напрямую из CRM (Google Sheets), фильтруя по Lead Status = "Verified" /
 "Partially verified" и пустому Stage. Это значит, что CRM Writer
 должен отработать до запуска Outreach Writer.

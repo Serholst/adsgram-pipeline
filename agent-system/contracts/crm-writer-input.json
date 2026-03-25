@@ -1,18 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "CRM Writer Agent Input",
-  "description": "Контракт: что Orchestrator передаёт CRM Writer Agent. Объединённый пакет из Bucket A (Discoverer) + enriched Bucket B (Enricher).",
+  "description": "Контракт: что Orchestrator передаёт CRM Writer Agent. Объединённый пакет из Bucket A (Discoverer) + enriched Bucket B (Enricher) + SKIP-лиды (для дедупликации).",
   "type": "object",
   "required": ["write_metadata", "leads"],
   "properties": {
     "write_metadata": {
       "type": "object",
-      "required": ["timestamp", "total_leads", "from_bucket_a", "from_bucket_b", "session_query"],
+      "required": ["timestamp", "total_leads", "from_bucket_a", "from_bucket_b", "from_skip", "session_query"],
       "properties": {
         "timestamp": { "type": "string", "format": "date-time" },
         "total_leads": { "type": "integer" },
         "from_bucket_a": { "type": "integer", "description": "Лиды из Discoverer Bucket A (уже с контактами)" },
         "from_bucket_b": { "type": "integer", "description": "Лиды из Enricher (бывший Bucket B)" },
+        "from_skip": { "type": "integer", "description": "SKIP-лиды из Discoverer (для дедупликации в CRM)" },
         "session_query": { "type": "string", "description": "Исходный запрос пользователя" }
       }
     },
@@ -31,20 +32,20 @@
           "country": { "type": ["string", "null"] },
           "seniority": { "type": ["string", "null"] },
           "vertical": { "type": ["string", "null"], "enum": ["iGaming", "VPN", "Crypto", "Adult", null], "description": "Вертикаль компании — определяется Orchestrator из запроса пользователя" },
-          "source_bucket": { "type": "string", "enum": ["A", "B"], "description": "Откуда пришёл лид: A = Discoverer, B = Enricher" },
+          "source_bucket": { "type": "string", "enum": ["A", "B", "SKIP"], "description": "Откуда пришёл лид: A = Discoverer, B = Enricher, SKIP = Discoverer (skip-лид для дедупликации)" },
           "verification_status": {
             "type": "string",
-            "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED", "ROLE_DISCREPANCY", "LEFT_COMPANY"]
+            "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED", "ROLE_DISCREPANCY", "LEFT_COMPANY", "SKIP"]
           },
           "verification_note": { "type": "string" },
           "lead_status": {
             "type": "string",
-            "enum": ["Verified", "Partially verified", "Not verified", "Skip"],
-            "description": "Статус для записи в CRM — Title Case. Outreach Writer фильтрует по Verified/Partially verified. Skip-лиды записываются для дедупликации."
+            "enum": ["Verified", "Partially verified", "Not verified", "Needs review", "Skip"],
+            "description": "Статус для записи в CRM — Title Case. Outreach Writer фильтрует по Verified/Partially verified. Needs review — для edge cases (конфликт дедупликации и т.д.). Skip-лиды записываются для дедупликации."
           },
-          "email": { "type": ["string", "null"], "description": "Из Discoverer (Bucket A) или Enricher (Bucket B)" },
+          "email": { "type": ["string", "null"], "description": "Из Discoverer (Bucket A) или Enricher (Bucket B). Для SKIP — если есть, полезно для dedup" },
           "email_status": { "type": ["string", "null"], "enum": ["verified", "catchall", "unverified", "unavailable", null] },
-          "email_source": { "type": "string", "enum": ["qualifier_pattern", "enricher_apollo", "enricher_free_path"], "description": "Откуда получен email" },
+          "email_source": { "type": ["string", "null"], "enum": ["discoverer_pattern", "enricher_apollo", "enricher_free_path", null], "description": "Откуда получен email. null для SKIP-лидов без email" },
           "phone": { "type": ["string", "null"] },
           "linkedin_url": { "type": ["string", "null"] },
           "twitter": { "type": ["string", "null"] },
@@ -56,9 +57,33 @@
           "enrichment_flags": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "Для Bucket B: EMAIL_VERIFIED, EMAIL_CATCHALL и т.д. Для Bucket A: пусто"
+            "description": "Для Bucket B: EMAIL_VERIFIED, EMAIL_CATCHALL и т.д. Для Bucket A и SKIP: пусто"
           },
-          "flags": { "type": "array", "items": { "type": "string" } }
+          "flags": { "type": "array", "items": { "type": "string" } },
+          "company_contacts": {
+            "type": ["object", "null"],
+            "description": "Company-level контакты из Pre-Enricher — для колонок Socials и Alt Contacts в CRM. null если Pre-Enricher не обогащал компанию.",
+            "properties": {
+              "general_email": { "type": ["string", "null"] },
+              "press_email": { "type": ["string", "null"] },
+              "partnerships_email": { "type": ["string", "null"] },
+              "phone": { "type": ["string", "null"] },
+              "social_links": {
+                "type": ["object", "null"],
+                "properties": {
+                  "linkedin": { "type": ["string", "null"] },
+                  "twitter": { "type": ["string", "null"] },
+                  "instagram": { "type": ["string", "null"] },
+                  "telegram": { "type": ["string", "null"] }
+                }
+              }
+            }
+          },
+          "industry_signals": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Сигналы из Pre-Enricher (конференции, спонсорства, найм, запуски) → CRM: Sources & Signals"
+          }
         }
       }
     }
@@ -67,9 +92,10 @@
     {
       "write_metadata": {
         "timestamp": "2026-03-20T16:00:00Z",
-        "total_leads": 2,
+        "total_leads": 3,
         "from_bucket_a": 1,
         "from_bucket_b": 1,
+        "from_skip": 1,
         "session_query": "iGaming Brazil"
       },
       "leads": [
@@ -89,15 +115,30 @@
           "lead_status": "Verified",
           "email": "c.mendes@betano.com",
           "email_status": "unverified",
-          "email_source": "qualifier_pattern",
+          "email_source": "discoverer_pattern",
           "phone": null,
           "linkedin_url": "https://linkedin.com/in/carlosmendes",
           "twitter": null,
+          "instagram": null,
+          "telegram_handle": null,
           "whatsapp": null,
           "conference_appearances": ["SBC Summit Latam 2025"],
           "contact_sources": ["LinkedIn", "ZoomInfo", "SBC Summit agenda"],
           "enrichment_flags": [],
-          "flags": []
+          "flags": [],
+          "company_contacts": {
+            "general_email": "info@betano.com",
+            "press_email": "press@betano.com",
+            "partnerships_email": null,
+            "phone": null,
+            "social_links": {
+              "linkedin": "https://linkedin.com/company/betano",
+              "twitter": "@betano_br",
+              "instagram": "@betano.br",
+              "telegram": null
+            }
+          },
+          "industry_signals": ["Title sponsor SBC Summit Latam 2025", "Hiring UA Manager in São Paulo"]
         },
         {
           "apollo_person_id": "1234xyz",
@@ -119,11 +160,67 @@
           "phone": "+55119876543",
           "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
           "twitter": "@anasilva_mkt",
+          "instagram": null,
+          "telegram_handle": null,
           "whatsapp": null,
           "conference_appearances": [],
           "contact_sources": ["LinkedIn", "Twitter", "Apollo Enrich"],
           "enrichment_flags": ["EMAIL_VERIFIED"],
-          "flags": []
+          "flags": [],
+          "company_contacts": {
+            "general_email": "contact@superbet.com",
+            "press_email": null,
+            "partnerships_email": "partners@superbet.com",
+            "phone": "+40213100100",
+            "social_links": {
+              "linkedin": "https://linkedin.com/company/superbet",
+              "twitter": "@superaborbet",
+              "instagram": "@superbet",
+              "telegram": null
+            }
+          },
+          "industry_signals": ["Expanded to Brazil Q1 2026", "SBC Awards 2025 nominee"]
+        },
+        {
+          "apollo_person_id": "9999skip",
+          "first_name": "Pedro",
+          "last_name": "Oliveira",
+          "title": "Retail Sales Manager",
+          "company": "Betano",
+          "company_domain": "betano.com",
+          "country": "Brazil",
+          "seniority": null,
+          "vertical": "iGaming",
+          "source_bucket": "SKIP",
+          "verification_status": "SKIP",
+          "verification_note": "SKIP. Irrelevant role — Retail Sales Manager, not digital marketing.",
+          "lead_status": "Skip",
+          "email": null,
+          "email_status": null,
+          "email_source": null,
+          "phone": null,
+          "linkedin_url": "https://linkedin.com/in/pedro-oliveira-betano",
+          "twitter": null,
+          "instagram": null,
+          "telegram_handle": null,
+          "whatsapp": null,
+          "conference_appearances": [],
+          "contact_sources": ["LinkedIn"],
+          "enrichment_flags": [],
+          "flags": ["RETAIL"],
+          "company_contacts": {
+            "general_email": "info@betano.com",
+            "press_email": "press@betano.com",
+            "partnerships_email": null,
+            "phone": null,
+            "social_links": {
+              "linkedin": "https://linkedin.com/company/betano",
+              "twitter": "@betano_br",
+              "instagram": "@betano.br",
+              "telegram": null
+            }
+          },
+          "industry_signals": ["Title sponsor SBC Summit Latam 2025", "Hiring UA Manager in São Paulo"]
         }
       ]
     }

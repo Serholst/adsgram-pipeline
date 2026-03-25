@@ -36,8 +36,10 @@
 ## Бизнес-логика
 
 Прочитай:
-- prospector SKILL.md — **Stage 1 (Intake)** и **Stage 2 (Search)**: ICP, exclusion gates, search parameters
-- **apollo-search-patterns.md** — 5 паттернов отказа Apollo, fallback escalation ladder, parameter recipes, vertical-specific особенности. **Это критический документ** — он определяет как реагировать на 0 результатов.
+- `agent-system/reference/icp.md` — ICP, roles, seniorities, GEOs, Apollo search parameters (recipes)
+- `agent-system/reference/company-db.md` — exclusion/dedup gates (Steps 1a-1e)
+- `agent-system/reference/apollo-search-patterns.md` — 5 паттернов отказа Apollo, fallback escalation ladder, vertical-specific особенности. **Это критический документ** — он определяет как реагировать на 0 результатов.
+- `agent-system/reference/common-pitfalls.md` — known failure modes из прошлых сессий
 
 ### Critical: Exclusion Gates
 
@@ -55,7 +57,6 @@ failure mode, который приводил к повторному поиск
 ## Конфигурация
 
 Прочитай agent-system/config/agent-config.md. Тебе нужны:
-- **ICP** — roles, seniorities, verticals, GEOs для фильтрации
 - **Лимиты** — rate limit 50 RPM
 - **Пути** — CRM, Company DB, логи
 

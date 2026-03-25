@@ -40,9 +40,9 @@
           "phone": { "type": ["string", "null"] },
           "linkedin_url": { "type": ["string", "null"] },
           "seniority": { "type": ["string", "null"], "description": "Passthrough из Discoverer — нужен CRM Writer для priority sorting" },
-          "contacts_from_qualifier": {
+          "contacts_found": {
             "type": "object",
-            "description": "Контакты, найденные Discoverer Agent — пробрасываются как есть",
+            "description": "Контакты, найденные Discoverer Agent — пробрасываются из входа как есть",
             "properties": {
               "linkedin_url": { "type": ["string", "null"] },
               "twitter": { "type": ["string", "null"] },
@@ -64,7 +64,7 @@
           "enrichment_flags": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "EMAIL_VERIFIED, EMAIL_CATCHALL, EMAIL_NOT_FOUND, EMAIL_UNVERIFIED, JOB_CHANGED, LEFT_COMPANY, FREE_PATH_USED"
+            "description": "EMAIL_VERIFIED, EMAIL_CATCHALL, EMAIL_NOT_FOUND, EMAIL_UNVERIFIED, JOB_CHANGED, LEFT_COMPANY, FREE_PATH_USED, MISSING_APOLLO_ID"
           },
           "enrichment_note": { "type": "string" }
         }
@@ -100,8 +100,15 @@
           "phone": "+55119876543",
           "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
           "seniority": "Senior",
-          "contacts_from_qualifier": {
+          "contacts_found": {
+            "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
             "twitter": "@anasilva_mkt",
+            "instagram": null,
+            "telegram_handle": null,
+            "email_pattern": null,
+            "phone": null,
+            "whatsapp": null,
+            "conference_appearances": [],
             "sources": ["LinkedIn", "Twitter"]
           },
           "verification_status": "PARTIALLY_VERIFIED",
@@ -122,7 +129,15 @@
           "phone": null,
           "linkedin_url": "https://linkedin.com/in/joao-costa",
           "seniority": "Manager",
-          "contacts_from_qualifier": {
+          "contacts_found": {
+            "linkedin_url": "https://linkedin.com/in/joao-costa",
+            "twitter": null,
+            "instagram": null,
+            "telegram_handle": null,
+            "email_pattern": null,
+            "phone": null,
+            "whatsapp": null,
+            "conference_appearances": [],
             "sources": ["LinkedIn"]
           },
           "verification_status": "VERIFIED",

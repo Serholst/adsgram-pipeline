@@ -52,10 +52,11 @@ outreach, автономно координируя агентов. Пользо
 
 Прочитай agent-system/config/agent-config.md. Тебе нужно:
 
-- **ICP** — для валидации запроса (вертикаль, GEO, роли в скоупе?)
 - **Лимиты** — soft limit 20 кредитов, 50 RPM, для решений на чекпойнтах
 - **Пути** — где CRM, где скиллы, где логи
 - **Язык** — русский с пользователем, английский в JSON
+
+Прочитай `agent-system/reference/icp.md` — для валидации запроса (вертикаль, GEO, роли в скоупе?).
 
 ## Вход
 
@@ -85,16 +86,42 @@ outreach, автономно координируя агентов. Пользо
 Пользователь НЕ участвует в передаче данных.
 Пользователь видит только чекпойнты.
 
+### Сохранение Pre-Enricher данных для CRM Writer
+
+После получения pre-enricher-output.json сохрани для каждой компании
+(по `company_domain` как ключу):
+
+- `company_contacts` — general_email, press_email, partnerships_email,
+  phone, social_links
+- `industry_signals` — конференции, спонсорства, найм, запуски
+
+Эти данные НЕ нужны Searcher и Discoverer — но нужны CRM Writer
+для колонок Socials, Alt Contacts и Sources & Signals.
+Храни их в контексте до сборки CRM Writer пакета.
+
 ### Сборка пакета для CRM Writer
 
 Перед вызовом CRM Writer ты собираешь пакет по
-agent-system/contracts/crm-writer-input.json из двух источников:
+agent-system/contracts/crm-writer-input.json из трёх источников:
+Discoverer (Bucket A + SKIP), Enricher (Bucket B), Pre-Enricher (company-level).
+
+**Для КАЖДОГО лида** (Bucket A, B и SKIP):
+
+- `vertical` ← определи из запроса пользователя (iGaming / VPN / Crypto / Adult).
+  Если запрос по доменам без указания вертикали — определи по company_domain
+  и контексту от Pre-Enricher.
+- `company_contacts` ← из сохранённых Pre-Enricher данных по company_domain.
+  Если Pre-Enricher не обогащал эту компанию → null.
+- `industry_signals` ← из сохранённых Pre-Enricher данных по company_domain.
+  Если Pre-Enricher не обогащал → пустой массив [].
 
 **Bucket A** (из discoverer-output.json, где `bucket: "A"`):
 
 - Копируй поля лида как есть
+- `source_bucket` ← `"A"`
 - `email` ← `contacts_found.email_pattern`
-- `email_source` ← `"qualifier_pattern"`
+- `email_status` ← `"unverified"` (email из web-pattern, не проверен через Apollo)
+- `email_source` ← `"discoverer_pattern"`
 - `lead_status` ← маппинг verification_status (см. таблицу ниже)
 - `linkedin_url` ← `contacts_found.linkedin_url` → CRM: Socials
 - `twitter` ← `contacts_found.twitter` → CRM: Socials
@@ -108,17 +135,31 @@ agent-system/contracts/crm-writer-input.json из двух источников:
 **Bucket B** (из enricher-output.json):
 
 - Копируй поля лида как есть
+- `source_bucket` ← `"B"`
 - `email`, `email_status`, `phone` ← из Enricher
 - `email_source` ← `"enricher_apollo"` или `"enricher_free_path"`
   (по enrichment_flags: FREE_PATH_USED → free_path)
 - `lead_status` ← маппинг verification_status (Enricher прокидывает
   его из discoverer-output — используй прокинутое значение)
-- `linkedin_url` ← из Enricher или `contacts_from_qualifier` → CRM: Socials
-- `twitter` ← из `contacts_from_qualifier` → CRM: Socials
-- `instagram` ← из `contacts_from_qualifier` → CRM: Socials
-- `telegram_handle` ← из `contacts_from_qualifier` → CRM: Socials
-- `whatsapp` ← из `contacts_from_qualifier` → CRM: Alt Contacts
-- `conference_appearances`, `contact_sources` ← из `contacts_from_qualifier` → CRM: Sources & Signals
+- `linkedin_url` ← из Enricher или `contacts_found` → CRM: Socials
+- `twitter` ← из `contacts_found` → CRM: Socials
+- `instagram` ← из `contacts_found` → CRM: Socials
+- `telegram_handle` ← из `contacts_found` → CRM: Socials
+- `whatsapp` ← из `contacts_found` → CRM: Alt Contacts
+- `conference_appearances`, `contact_sources` ← из `contacts_found` → CRM: Sources & Signals
+
+**SKIP-лиды** (из discoverer-output.json, где `bucket: "SKIP"`):
+
+- Копируй поля лида как есть
+- `source_bucket` ← `"SKIP"`
+- `lead_status` ← `"Skip"`
+- `email` ← `contacts_found.email_pattern` (если есть — полезно для dedup)
+- `email_source` ← `"discoverer_pattern"` (если email есть) или null
+- `email_status` ← `"unverified"` (если email есть) или null
+- `linkedin_url`, `twitter`, `instagram`, `telegram_handle`, `whatsapp`,
+  `phone` ← из `contacts_found` (если есть — полезно для будущих сессий)
+- `conference_appearances`, `contact_sources` ← из `contacts_found`
+- `verification_note` ← ОБЯЗАТЕЛЬНО содержит причину skip
 
 ### Маппинг verification_status → lead_status
 
@@ -237,19 +278,31 @@ DISCOVERER ← searcher-output.json от тебя
 - `leads` не пуст → передавай Discoverer целиком + `domains_audit`
   (Discoverer использует pattern info для приоритизации web discovery)
 
-### Pre-Enricher (Этап B) → discoverer-output.json
+### Discoverer → discoverer-output.json
 
-- Парсишь `discoverer-output.json` (выход Этапа B Pre-Enricher)
+- Парсишь `discoverer-output.json` (выход Discoverer Agent)
 - Считай метаданные: bucket_a, bucket_b, skipped
 - Skip >80% → предупреди пользователя + feedback для Searcher
 - Bucket B пуст → пропусти Enricher, иди в CRM Writer с Bucket A
+
+### Сборка пакета для Enricher
+
+Перед вызовом Enricher собери пакет по enricher-input.json
+из Bucket B лидов discoverer-output.json:
+
+Для каждого Bucket B лида:
+
+- Скопируй все поля лида
+- `linkedin_url` ← `contacts_found.linkedin_url` (извлеки на top-level —
+  Enricher использует его как fallback при обогащении)
+- `contacts_found` ← скопируй целиком (Enricher прокидывает дальше в output)
 
 ### Enricher
 
 - Парсишь `enricher-output.json`
 - Считай `enricher_metadata`: success_rate, credits_spent, recommendation
 - success_rate <50% → включи recommendation в SUMMARY
-- Собирай пакет для CRM Writer (Bucket A + enriched Bucket B)
+- Собирай пакет для CRM Writer (Bucket A + enriched Bucket B + SKIP)
 
 ### CRM Writer
 
@@ -409,4 +462,4 @@ DISCOVERER ← searcher-output.json от тебя
 2. Включи: метрики воронки, кредиты, рекомендации агентов,
    что сработало, что нет
 3. Паттерн повторяется 3+ раз → отметь: «перенести
-   в Common Pitfalls в SKILL.md»
+   в reference/common-pitfalls.md»

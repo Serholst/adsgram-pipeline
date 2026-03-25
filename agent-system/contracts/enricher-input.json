@@ -39,7 +39,7 @@
           "linkedin_url": { "type": ["string", "null"], "description": "Fallback для повторной попытки обогащения" },
           "contacts_found": {
             "type": "object",
-            "description": "Контакты из Discoverer — пробрасываются как contacts_from_qualifier",
+            "description": "Контакты из Discoverer — пробрасываются в enricher-output как contacts_found (имя поля сохраняется)",
             "properties": {
               "linkedin_url": { "type": ["string", "null"] },
               "twitter": { "type": ["string", "null"] },

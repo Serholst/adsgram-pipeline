@@ -148,7 +148,7 @@
 
 ## Что Searcher ожидает от тебя
 
-Прочитай `agent-system/skills/prospector/apollo-search-patterns.md` — **Patterns 1-2**.
+Прочитай `agent-system/reference/apollo-search-patterns.md` — **Patterns 1-2**.
 
 Searcher использует твой output для fallback-шагов 3 и 4 своей Escalation Ladder.
 Без твоих данных эти шаги НЕДОСТУПНЫ и Searcher останавливается на шаге 2.
@@ -185,9 +185,12 @@ Searcher должен применить platform_user_filter".
 ## Конфигурация
 
 Прочитай agent-system/config/agent-config.md. Тебе нужны:
-- **ICP** — вертикали и GEOs для контекста поиска
-- **Пути** — логи
+- **Пути** — CRM, Company DB, логи
 - **Язык** — русский с пользователем, английский в JSON
+
+Прочитай также:
+- `agent-system/reference/icp.md` — вертикали и GEOs для контекста поиска
+- `agent-system/reference/company-db.md` — структура Company DB и процедура exclusion
 
 ## Проверка Company DB перед началом работы
 

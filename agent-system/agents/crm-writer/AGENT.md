@@ -47,13 +47,9 @@
 
 ## Бизнес-логика
 
-Прочитай prospector SKILL.md — **Stage 5 (Report)**. Тебе нужны:
-
-- **Колонки CRM** — определения 16 колонок и что в них писать
-- **SKIP leads** — обязательно записываются с причиной в Notes
-- **Priority sorting** — Director/VP первыми, generic roles последними
-- **Company DB update** — обновление через `python3 tools/sheets_helper.py companydb-append-rows`
-- **Fallback** — если Google Sheets недоступен, создай standalone JSON в `outputs/`
+Прочитай:
+- `agent-system/reference/crm-columns.md` — определения 16 колонок, SKIP leads rules, priority sorting, Stage values, fallback
+- `agent-system/reference/company-db.md` — структура Company DB и процедура обновления через `companydb-append-rows`
 
 ## Конфигурация
 
@@ -82,10 +78,10 @@ agent-system/contracts/crm-writer-input.json — объединённый пак
 | Title | `title` | required |
 | Email | `email` | null допустим |
 | Email Status | `email_status` | verified / catchall / unverified / unavailable |
-| Socials | собери из `linkedin_url`, `twitter`, `instagram`, `telegram_handle` + company `social_links` из Pre-Enricher | Формат: `LinkedIn: [url] \| TG: @handle \| Twitter: @handle \| IG: @handle`. Только ссылки на соцсети, без источников |
-| Alt Contacts | собери из `phone`, `whatsapp`, company emails (`general_email`, `press_email`, `partnerships_email`) из Pre-Enricher | Формат: `Phone: +number \| WhatsApp: +number \| Alt email: press@company.com`. Опционально — заполняй только если данные есть |
-| Sources & Signals | собери из `conference_appearances`, `contact_sources`, персонализационные сигналы (hiring, sponsorship) | Формат: `Source: Apollo, ZoomInfo \| Conference: SiGMA 2025 \| Hiring: UA Manager role`. Источники + сигналы для outreach |
-| Lead Status | `lead_status` | Verified / Partially verified / Not verified |
+| Socials | собери из `linkedin_url`, `twitter`, `instagram`, `telegram_handle` (per-lead) + `company_contacts.social_links` (company-level, если есть) | Формат: `LinkedIn: [url] \| TG: @handle \| Twitter: @handle \| IG: @handle`. Только ссылки на соцсети, без источников |
+| Alt Contacts | собери из `phone`, `whatsapp` (per-lead) + `company_contacts.general_email`, `company_contacts.press_email`, `company_contacts.partnerships_email`, `company_contacts.phone` (если есть) | Формат: `Phone: +number \| WhatsApp: +number \| Alt email: press@company.com`. Опционально — заполняй только если данные есть |
+| Sources & Signals | собери из `conference_appearances`, `contact_sources` (per-lead) + `industry_signals` (company-level, если есть) | Формат: `Source: Apollo, ZoomInfo \| Conference: SiGMA 2025 \| Hiring: UA Manager role`. Источники + сигналы для outreach |
+| Lead Status | `lead_status` | Verified / Partially verified / Not verified / Skip |
 | Stage | пусто | заполняется на этапе outreach |
 | First Contact Date | пусто | заполняется при отправке |
 | Last Activity Date | пусто | заполняется при отправке |
@@ -132,7 +128,7 @@ python3 tools/sheets_helper.py crm-validate-headers
 
 - Required fields заполнены: company, first_name, last_name, title
 - Email валиден по формату (если не null)
-- lead_status из допустимого набора: "Verified", "Partially verified", "Not verified"
+- lead_status из допустимого набора: "Verified", "Partially verified", "Not verified", "Skip"
 - email_status из допустимого набора: "verified", "catchall", "unverified", "unavailable", null
 
 Невалидный лид → отклони с причиной, продолжи с остальными.
