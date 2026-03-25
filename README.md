@@ -1,34 +1,49 @@
-# AdsGram Pipeline
+# AdsGram BD System
 
-Automated lead prospecting, enrichment, and outreach pipeline for [AdsGram.ai](https://adsgram.ai) — Telegram-native advertising platform.
+Multi-agent BD prospecting system for [AdsGram.ai](https://adsgram.ai) — Telegram-native advertising platform.
 
 ## Architecture
 
 ```
-skills/           — Claude/OpenClaw skill definitions (SKILL.md)
-agents/           — Agent role definitions (AGENT.md)
-contracts/        — JSON schemas for inter-agent data contracts
-apollo-cli/       — Python CLI for Apollo.io API (search, enrich, manage credits)
-telegram-pipeline/— Telegram chat scoring & outreach pipeline (Python)
-docs/             — ICP documents, BD rules, outreach frameworks
-config/           — Agent configuration
-media/            — Case study images for pitches
-data/             — CRM data (gitignored — lives in Google Sheets)
-logs/             — Session logs, feedback, retrospectives (templates in git)
+agent-system/             — Claude multi-agent pipeline
+  agents/                   Agent role definitions (AGENT.md)
+  skills/                   Instruction sets (SKILL.md)
+  contracts/                JSON schemas for inter-agent data contracts
+  config/                   Shared agent configuration
+
+telegram-scoring/         — Python: Telegram chat lead scoring & pitch generation
+tools/                    — Shared utilities (Google Sheets CLI)
+docs/                     — ICP documents, BD rules, outreach frameworks
+media/                    — Case study images for pitches
+logs/                     — Session logs, feedback, retrospectives
+business/ → symlink       — YAML business logic (ICP, playbooks, scoring)
 ```
 
-## Pipeline Flow
+## Agent Pipeline
 
-1. **Prospector** — Apollo people search → web verification → enrichment
-2. **Outreach Writer** — Personalized cold emails with CPM/CTR benchmarks
-3. **Telegram Sender** — Score leads from BD chats → send pitches via Telegram
-4. **Autopipeline** — Orchestrator that chains all stages with approval checkpoints
+7-agent system orchestrated by Claude Code:
+
+1. **Pre-Enricher** — Company-level web recon (parent companies, decision makers, email patterns)
+2. **Searcher** — Apollo people search armed with Pre-Enricher context
+3. **Discoverer** — Per-lead: LinkedIn + role verification + bucket assignment (A/B/Skip)
+4. **Enricher** — Apollo paid enrichment for Bucket B (1 credit/lead, checkpoint approval)
+5. **CRM Writer** — Validate & write to Google Sheets CRM + Company DB
+6. **Outreach Writer** — Personalized cold emails with CPM/CTR benchmarks
+7. **Orchestrator** — Chains all stages, manages credits, writes retrospectives
+
+## Telegram Scoring
+
+Standalone Python pipeline for scoring leads from BD Telegram chats:
+
+```bash
+python telegram-scoring/main.py --manager Sergey [--fresh] [--limit 20]
+```
 
 ## Setup
 
 ```bash
 cp .env.example .env
-# Fill in: ANTHROPIC_API_KEY, APOLLO_API_KEY, TELEGRAM_BOT_TOKEN, GOOGLE_SHEETS_SPREADSHEET_ID
+# Fill in: ANTHROPIC_API_KEY, APOLLO_API_KEY, GOOGLE_SHEETS_SPREADSHEET_ID
 ```
 
 ## Target Verticals
