@@ -76,7 +76,7 @@ agent-system/contracts/crm-writer-input.json — объединённый пак
 | Колонка | Источник из контракта | Заметки |
 |---------------|----------------------|---------|
 | Company | `company` | required |
-| Vertical | определи по company_domain | iGaming / VPN / Crypto / Adult |
+| Vertical | `vertical` (из контракта) или определи по company_domain если null | iGaming / VPN / Crypto / Adult |
 | Country | `country` | может быть null |
 | Name | `first_name` + `last_name` | required |
 | Title | `title` | required |

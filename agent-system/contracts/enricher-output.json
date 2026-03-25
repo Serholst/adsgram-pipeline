@@ -39,16 +39,28 @@
           "email_status": { "type": ["string", "null"], "enum": ["verified", "catchall", "unverified", "unavailable", null] },
           "phone": { "type": ["string", "null"] },
           "linkedin_url": { "type": ["string", "null"] },
+          "seniority": { "type": ["string", "null"], "description": "Passthrough из Discoverer — нужен CRM Writer для priority sorting" },
           "contacts_from_qualifier": {
             "type": "object",
-            "description": "Контакты, найденные Qualifier Agent — пробрасываются как есть"
+            "description": "Контакты, найденные Discoverer Agent — пробрасываются как есть",
+            "properties": {
+              "linkedin_url": { "type": ["string", "null"] },
+              "twitter": { "type": ["string", "null"] },
+              "instagram": { "type": ["string", "null"] },
+              "telegram_handle": { "type": ["string", "null"] },
+              "email_pattern": { "type": ["string", "null"] },
+              "phone": { "type": ["string", "null"] },
+              "whatsapp": { "type": ["string", "null"] },
+              "conference_appearances": { "type": "array", "items": { "type": "string" } },
+              "sources": { "type": "array", "items": { "type": "string" } }
+            }
           },
           "verification_status": {
             "type": "string",
             "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED", "ROLE_DISCREPANCY", "LEFT_COMPANY"],
-            "description": "Passthrough из Qualifier — нужен Orchestrator для сборки CRM Writer input"
+            "description": "Passthrough из Discoverer — нужен Orchestrator для сборки CRM Writer input"
           },
-          "verification_note": { "type": "string", "description": "Passthrough из Qualifier — персонализационные сигналы" },
+          "verification_note": { "type": "string", "description": "Passthrough из Discoverer — персонализационные сигналы" },
           "enrichment_flags": {
             "type": "array",
             "items": { "type": "string" },
@@ -87,6 +99,7 @@
           "email_status": "verified",
           "phone": "+55119876543",
           "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
+          "seniority": "Senior",
           "contacts_from_qualifier": {
             "twitter": "@anasilva_mkt",
             "sources": ["LinkedIn", "Twitter"]
@@ -108,6 +121,7 @@
           "email_status": "unavailable",
           "phone": null,
           "linkedin_url": "https://linkedin.com/in/joao-costa",
+          "seniority": "Manager",
           "contacts_from_qualifier": {
             "sources": ["LinkedIn"]
           },

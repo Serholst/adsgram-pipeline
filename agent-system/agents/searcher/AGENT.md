@@ -115,7 +115,7 @@ domains_blocked, счётчики) + `leads[]` (apollo_person_id,
 2. Если <3 результатов → **Broadened search** — без seniority (Recipe 2)
 3. Если <3 результатов и Pre-Enricher дал parent domain → **Parent search** (Recipe 3)
 4. Если <3 результатов и Pre-Enricher дал имена → **Person name search** (Recipe 4)
-5. Если всё ещё 0 → пометь `APOLLO_BLIND_SPOT`, передай Qualifier для web discovery
+5. Если всё ещё 0 → пометь `APOLLO_BLIND_SPOT`, передай Discoverer для web discovery
 
 **Не прыгай сразу на шаг 5.** Каждый шаг — это шанс найти людей бесплатно.
 
@@ -166,7 +166,7 @@ apollo-search-patterns.md. Компании с нулевым покрытием
 зафиксируй явно в `search_metadata` с указанием:
 - Какие шаги escalation ladder пройдены
 - Какой паттерн отказа обнаружен (Pattern 1-5)
-- Рекомендация для Qualifier
+- Рекомендация для Discoverer
 
 ## Рефлексия после выполнения
 

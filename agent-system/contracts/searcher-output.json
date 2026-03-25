@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Searcher Agent Output",
-  "description": "Контракт: что возвращает Searcher Agent → принимает Qualifier Agent",
+  "description": "Контракт: что возвращает Searcher Agent → принимает Discoverer Agent",
   "type": "object",
   "required": ["search_metadata", "leads"],
   "properties": {

@@ -97,9 +97,10 @@
 
 Для каждого лида назначь бакет на основе контактов + верификации:
 
-**Bucket A** (можно писать):
-- Есть email_pattern ИЛИ (LinkedIn + ещё один канал)
+**Bucket A** (можно писать — есть email для outreach):
+- **Обязательно**: есть `email_pattern` (без email лид не получит outreach)
 - verification_status: VERIFIED или PARTIALLY_VERIFIED
+- Дополнительные каналы (LinkedIn, Twitter и т.д.) усиливают, но не заменяют email
 
 **Bucket B** (нужно платное обогащение):
 - Email не найден бесплатно

@@ -269,14 +269,14 @@ Flag any quality concerns:
 
 ### Stage 3: ELIMINATED (v1.5.0)
 
-**The Qualifier agent and Stage 3 have been eliminated.** All three responsibilities (contact discovery, role verification, bucket sort) are now performed by Pre-Enricher Этап B in a single web search pass.
+**The Qualifier agent was eliminated in v1.5.0.** Person-level discovery, role verification, and bucket sort are now handled by the **Discoverer** agent — a separate focused agent.
 
-See `agent-system/agents/pre-enricher/AGENT.md` → Этап B for:
+See `agent-system/agents/discoverer/AGENT.md` for:
 - Role verification (via LinkedIn search — same search that finds the profile URL)
 - Bucket assignment (A/B/Skip — based on contacts found + verification status)
 - 0-result company lead discovery
 
-The output of Pre-Enricher Этап B is `discoverer-output.json` (same schema, same contract — downstream agents are unaffected).
+Output: `discoverer-output.json` (same contract schema — downstream agents are unaffected).
 
 This step uses web search only — zero Apollo credits.
 

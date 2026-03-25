@@ -1,76 +1,41 @@
 ---
 name: adsgram-autopipeline
-version: 2.2.0
-description: "Automated AdsGram prospecting pipeline: takes a vertical+GEO or domain list, auto-runs Apollo search, web verification, and CRM write — pausing only once for enrichment credit approval. Replaces the manual step-by-step prospector with a single-command flow. Trigger when user says: 'автопоиск', 'autopipeline', 'запусти пайплайн', 'автопроспектинг', 'pipeline iGaming Brazil', 'найди лидов автоматом', or any prospecting request where the user wants minimal interaction. Also trigger on standard prospecting phrases: 'найди лидов', 'поиск контактов', 'обогатить лиды', 'prospecting', 'find leads' — the pipeline handles the full cycle automatically."
+version: 3.0.0
+description: "Automated AdsGram prospecting pipeline: takes a vertical+GEO or domain list, delegates to the Orchestrator agent which runs the full 7-agent chain (Pre-Enricher → Searcher → Discoverer → Enricher → CRM Writer → Outreach Writer) with two checkpoints. Trigger when user says: 'автопоиск', 'autopipeline', 'запусти пайплайн', 'автопроспектинг', 'pipeline iGaming Brazil', 'найди лидов автоматом', or any prospecting request where the user wants minimal interaction. Also trigger on standard prospecting phrases: 'найди лидов', 'поиск контактов', 'обогатить лиды', 'prospecting', 'find leads' — the pipeline handles the full cycle automatically."
 ---
 
 # AdsGram Auto-Pipeline
 
-## Step 1 → PROSPECTOR
+This skill is a thin entry point that delegates to the **Orchestrator agent** for the full prospecting → outreach cycle. The Orchestrator manages all 7 agents, retry logic, data routing, and checkpoints internally.
 
-Spawn a subagent:
+## Step 1 → ORCHESTRATOR
+
+Spawn the Orchestrator agent:
 
 ```
-Read the skill at [path to adsgram-prospector/SKILL.md].
+Read agent-system/agents/orchestrator/AGENT.md.
+Read agent-system/config/agent-config.md.
 Task: [user's request]
-Find leads and write them to CRM, but do not enrich.
-Return leads that need enrichment and Apollo credit balance.
+Run the full prospecting → outreach pipeline.
+The Orchestrator will pause at two checkpoints:
+  - CHECKPOINT 1: enrichment credit approval (after Discoverer)
+  - CHECKPOINT 2: pitch approval (after Outreach Writer)
 ```
+
+The Orchestrator internally runs:
+Pre-Enricher → Searcher → Discoverer → [CP1] → Enricher → CRM Writer → Outreach Writer → [CP2]
+
+Wait for the Orchestrator to complete. It will return a SUMMARY with funnel metrics.
 
 ---
 
-## Step 2 → CHECKPOINT: Enrichment
+## Step 2 → GMAIL DRAFTER
 
-Show the user what the prospector returned — enrichment candidates, cost, and balance.
-
-Soft limit: 20 credits per session. If exceeded, warn but allow with confirmation.
-
-- User approves → go to Step 3
-- User declines → go to Step 4
-
----
-
-## Step 3 → ENRICHER
-
-Spawn a subagent:
-
-```
-Read the skill at [path to adsgram-prospector/SKILL.md].
-Enrich these leads: [approved list from checkpoint]
-Write results to CRM.
-Return enrichment summary.
-```
-
----
-
-## Step 4 → OUTREACH
-
-Spawn a subagent:
-
-```
-Read the skill at [path to adsgram-outreach/SKILL.md].
-Write pitches for new leads in CRM (Google Sheets).
-Return pitches.
-```
-
----
-
-## Step 5 → CHECKPOINT: Pitches
-
-Show pitches to the user. Wait for approval.
-
-- User approves → go to Step 6
-- User declines → stop, pitches saved for later
-
----
-
-## Step 6 → GMAIL DRAFTER
-
-Spawn a subagent:
+After the Orchestrator completes and pitches are approved (CP2), spawn the Gmail Drafter:
 
 ```
 Read the skill at agent-system/skills/gmail-drafter/SKILL.md.
-Create Gmail drafts for approved pitches: [list with To, Subject, Body]
+Create Gmail drafts for approved pitches: [list with To, Subject, Body from Orchestrator output]
 Return draft confirmations.
 ```
 
@@ -78,9 +43,11 @@ Drafts appear in Gmail for manual review. User sends manually.
 
 ---
 
-## Step 7 → Summary
+## Step 3 → Summary
 
-Print results from all steps.
+Print combined results:
+- Orchestrator SUMMARY (funnel, credits, recommendations)
+- Gmail Drafter results (drafts created, any failures)
 
 ---
 

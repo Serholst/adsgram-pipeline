@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Enricher Agent Input",
+  "description": "Контракт: что Orchestrator передаёт Enricher Agent. Подмножество Bucket B из discoverer-output.json, одобренное пользователем на чекпойнте.",
+  "type": "object",
+  "required": ["enrichment_metadata", "leads"],
+  "properties": {
+    "enrichment_metadata": {
+      "type": "object",
+      "required": ["timestamp", "total_leads", "approved_budget", "current_balance"],
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "total_leads": { "type": "integer", "description": "Количество лидов в Bucket B, одобренных пользователем" },
+        "approved_budget": { "type": "integer", "description": "Сколько кредитов пользователь одобрил на чекпойнте" },
+        "current_balance": { "type": "integer", "description": "Текущий баланс кредитов Apollo" },
+        "session_query": { "type": "string", "description": "Исходный запрос пользователя (для контекста)" }
+      }
+    },
+    "leads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["apollo_person_id", "first_name", "last_name", "title", "company", "company_domain"],
+        "properties": {
+          "apollo_person_id": { "type": "string", "description": "Обязательный — без него обогащение невозможно" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "title": { "type": "string" },
+          "company": { "type": "string" },
+          "company_domain": { "type": "string" },
+          "country": { "type": ["string", "null"] },
+          "seniority": { "type": ["string", "null"], "description": "Для приоритизации: Director/VP первыми" },
+          "verification_status": {
+            "type": "string",
+            "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED"],
+            "description": "Passthrough — нужен в enricher-output для Orchestrator"
+          },
+          "verification_note": { "type": "string", "description": "Passthrough — персонализационные сигналы" },
+          "linkedin_url": { "type": ["string", "null"], "description": "Fallback для повторной попытки обогащения" },
+          "contacts_found": {
+            "type": "object",
+            "description": "Контакты из Discoverer — пробрасываются как contacts_from_qualifier",
+            "properties": {
+              "linkedin_url": { "type": ["string", "null"] },
+              "twitter": { "type": ["string", "null"] },
+              "instagram": { "type": ["string", "null"] },
+              "telegram_handle": { "type": ["string", "null"] },
+              "email_pattern": { "type": ["string", "null"], "description": "Если есть — попробуй бесплатный re-query до траты кредита" },
+              "phone": { "type": ["string", "null"] },
+              "whatsapp": { "type": ["string", "null"] },
+              "conference_appearances": { "type": "array", "items": { "type": "string" } },
+              "sources": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "enrichment_metadata": {
+        "timestamp": "2026-03-20T15:15:00Z",
+        "total_leads": 4,
+        "approved_budget": 4,
+        "current_balance": 18,
+        "session_query": "iGaming Brazil"
+      },
+      "leads": [
+        {
+          "apollo_person_id": "1234xyz",
+          "first_name": "Ana",
+          "last_name": "Silva",
+          "title": "Growth Marketing Manager",
+          "company": "Superbet",
+          "company_domain": "superbet.com",
+          "country": "Brazil",
+          "seniority": "Senior",
+          "verification_status": "PARTIALLY_VERIFIED",
+          "verification_note": "LinkedIn найден, роль совпадает, но email не найден бесплатно",
+          "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
+          "contacts_found": {
+            "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
+            "twitter": "@anasilva_mkt",
+            "instagram": null,
+            "telegram_handle": null,
+            "email_pattern": null,
+            "phone": null,
+            "whatsapp": null,
+            "conference_appearances": [],
+            "sources": ["LinkedIn", "Twitter"]
+          }
+        }
+      ]
+    }
+  ]
+}

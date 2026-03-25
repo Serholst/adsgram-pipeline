@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Qualifier Agent Output",
-  "description": "Контракт: что возвращает Qualifier Agent → принимают Enricher Agent (Bucket B) и CRM Writer Agent (Bucket A + SKIP)",
+  "title": "Discoverer Agent Output",
+  "description": "Контракт: что возвращает Discoverer Agent → принимают Enricher Agent (Bucket B) и CRM Writer Agent (Bucket A + SKIP)",
   "type": "object",
-  "required": ["qualifier_metadata", "leads"],
+  "required": ["discoverer_metadata", "leads"],
   "properties": {
-    "qualifier_metadata": {
+    "discoverer_metadata": {
       "type": "object",
       "required": ["timestamp", "total_processed", "verified", "partially_verified", "not_verified", "skipped", "new_leads_discovered", "bucket_a", "bucket_b"],
       "properties": {
@@ -45,7 +45,10 @@
             "properties": {
               "linkedin_url": { "type": ["string", "null"] },
               "twitter": { "type": ["string", "null"] },
+              "instagram": { "type": ["string", "null"], "description": "Instagram handle если найден → CRM: Socials" },
+              "telegram_handle": { "type": ["string", "null"], "description": "Telegram @handle если найден → CRM: Socials" },
               "email_pattern": { "type": ["string", "null"], "description": "Email, выведенный из ZoomInfo/RocketReach" },
+              "phone": { "type": ["string", "null"], "description": "Телефон если найден → CRM: Alt Contacts" },
               "whatsapp": { "type": ["string", "null"] },
               "conference_appearances": { "type": "array", "items": { "type": "string" } },
               "sources": { "type": "array", "items": { "type": "string" }, "description": "Откуда взята информация" }
@@ -61,7 +64,7 @@
   },
   "examples": [
     {
-      "qualifier_metadata": {
+      "discoverer_metadata": {
         "timestamp": "2026-03-20T15:00:00Z",
         "total_processed": 9,
         "verified": 4,
@@ -88,7 +91,10 @@
           "contacts_found": {
             "linkedin_url": "https://linkedin.com/in/carlosmendes",
             "twitter": null,
+            "instagram": null,
+            "telegram_handle": null,
             "email_pattern": "c.mendes@betano.com",
+            "phone": null,
             "whatsapp": null,
             "conference_appearances": ["SBC Summit Latam 2025"],
             "sources": ["LinkedIn", "ZoomInfo", "SBC Summit agenda"]
@@ -113,7 +119,10 @@
           "contacts_found": {
             "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
             "twitter": "@anasilva_mkt",
+            "instagram": null,
+            "telegram_handle": null,
             "email_pattern": null,
+            "phone": null,
             "whatsapp": null,
             "conference_appearances": [],
             "sources": ["LinkedIn", "Twitter"]

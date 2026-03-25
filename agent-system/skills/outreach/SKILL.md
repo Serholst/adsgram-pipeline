@@ -42,7 +42,7 @@ The user will provide lead data in one of three ways:
 **Option A — Lead name from CRM:**
 > "Напиши письмо для Ricardo Chavez"
 
-Find the CRM file (`AdsGram_CRM.xlsx`) in the mounted folder, locate the lead by name on the "Leads" sheet, and use all available columns for context.
+Read leads from CRM via `python3 tools/sheets_helper.py crm-read-all`, locate the lead by name on the "Leads" sheet, and use all available columns for context.
 
 **Option B — Pasted lead data:**
 > "Ricardo Chavez, Marketing Director MX & Latam, Betway Global, Mexico, $1.1B revenue, 750 employees"

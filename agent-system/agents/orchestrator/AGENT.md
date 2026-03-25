@@ -128,11 +128,13 @@ agent-system/contracts/crm-writer-input.json из двух источников:
 | PARTIALLY_VERIFIED | "Partially verified" | Да |
 | NOT_VERIFIED | "Not verified" | Да |
 | ROLE_DISCREPANCY | "Not verified" | Да (с verification_note) |
-| LEFT_COMPANY | — | Нет: skip, не включай в пакет |
-| SKIP | — | Нет: skip, не включай в пакет |
+| LEFT_COMPANY | "Skip" | Да (с verification_note + причина в Notes) |
+| SKIP | "Skip" | Да (с verification_note + причина в Notes) |
 
-LEFT_COMPANY и SKIP не попадают в CRM Writer input —
-они уже обработаны на этапе Qualifier (bucket: "SKIP").
+LEFT_COMPANY и SKIP попадают в CRM Writer input с lead_status: "Skip".
+Это предотвращает повторный поиск и расход ресурсов в будущих сессиях.
+SKIP-лиды записываются в CRM с причиной в Notes — CRM становится
+единственным источником правды для дедупликации.
 
 ## Поток выполнения
 
@@ -215,7 +217,7 @@ DISCOVERER ← searcher-output.json от тебя
 - Если `enrichment_failed` для компании — передай Searcher
   предупреждение: «непрозрачная компания, расширь фильтры»
 - Сохрани `known_decision_makers` и `company_contacts` —
-  они пойдут в Qualifier как дополнительный контекст
+  они пойдут в Discoverer как дополнительный контекст
 
 ### Searcher
 
@@ -232,8 +234,8 @@ DISCOVERER ← searcher-output.json от тебя
   Если есть компании с `escalation_depth < 5` и `all_available_exhausted: false` →
   retry с инструкцией использовать пропущенные паттерны.
   Max 2 попытки.
-- `leads` не пуст → передавай Qualifier целиком + `domains_audit`
-  (Qualifier использует pattern info для приоритизации web discovery)
+- `leads` не пуст → передавай Discoverer целиком + `domains_audit`
+  (Discoverer использует pattern info для приоритизации web discovery)
 
 ### Pre-Enricher (Этап B) → discoverer-output.json
 
@@ -282,7 +284,7 @@ DISCOVERER ← searcher-output.json от тебя
 
 Два обязательных — единственные моменты, когда пайплайн ждёт:
 
-**CHECKPOINT 1** — после Qualifier, перед Enricher.
+**CHECKPOINT 1** — после Discoverer, перед Enricher.
 Формат в autopipeline SKILL.md, Step 3.
 
 - Bucket B пуст → пропусти чекпойнт, но покажи краткий статус:
@@ -319,7 +321,7 @@ DISCOVERER ← searcher-output.json от тебя
 Когда формируешь промт для следующего агента — включи
 релевантные рекомендации предыдущего как контекст.
 
-Пример: Qualifier пишет «catchall домен stake.com» →
+Пример: Discoverer пишет «catchall домен stake.com» →
 передай Enricher, чтобы не тратил кредит на бесплатный re-query
 для этого домена (catchall не поможет).
 
@@ -342,7 +344,7 @@ DISCOVERER ← searcher-output.json от тебя
 ### Воронка
 - Компании найдены: N
 - Кандидаты от Searcher: N
-- После Qualifier: Bucket A: N, Bucket B: N, Skip: N
+- После Discoverer: Bucket A: N, Bucket B: N, Skip: N
 - После Enricher: email найден: N, не найден: N
 - Записано в CRM: N
 - Питчей подготовлено: N

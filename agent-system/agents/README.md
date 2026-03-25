@@ -131,7 +131,7 @@ logs/
 1.  Searcher       →  agent-system/contracts/searcher-output.json           (Apollo search with Pre-Enricher context)
 0b. Discoverer      →  agent-system/contracts/discoverer-output.json          (contacts + verify + bucket sort)
 3. Enricher      →  agent-system/contracts/enricher-output.json   (CHECKPOINT: одобрение кредитов)
-4. CRM Writer    →  запись в Excel (принимает данные от Qualifier и Enricher)
+4. CRM Writer    →  запись в Google Sheets (принимает данные от Discoverer и Enricher)
 5. Outreach Writer → письма                          (CHECKPOINT: одобрение питчей)
 ```
 

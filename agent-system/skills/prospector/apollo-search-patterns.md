@@ -84,7 +84,7 @@ description: "Apollo API search failure patterns, fallback strategies, and searc
 
 **Fallback:**
 1. Отфильтруй titles: исключи "Model", "Content Creator", "Entertainer", "Cam", "Performer", "Star", "Webcam", "Streamer"
-2. Если после фильтрации 0 → компания непрозрачна, передай в Qualifier для web discovery (Stage 3c)
+2. Если после фильтрации 0 → компания непрозрачна, передай в Discoverer для web discovery
 3. Pre-Enricher может найти реальных executives через BBB, пресс-релизы
 
 **Title exclusion list:**
@@ -144,7 +144,7 @@ Step 4: Search by person names (if Pre-Enricher found decision makers)
     ▼ Not found
 Step 5: Flag for web-only discovery
     │   Mark company as APOLLO_BLIND_SPOT in search_metadata
-    │   Qualifier (Stage 3c) will handle via web search
+    │   Discoverer will handle via web search
     │
     └─ DONE (with recommendation)
 ```

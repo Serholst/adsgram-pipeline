@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "CRM Writer Agent Input",
-  "description": "Контракт: что Orchestrator передаёт CRM Writer Agent. Объединённый пакет из Bucket A (Qualifier) + enriched Bucket B (Enricher).",
+  "description": "Контракт: что Orchestrator передаёт CRM Writer Agent. Объединённый пакет из Bucket A (Discoverer) + enriched Bucket B (Enricher).",
   "type": "object",
   "required": ["write_metadata", "leads"],
   "properties": {
@@ -11,7 +11,7 @@
       "properties": {
         "timestamp": { "type": "string", "format": "date-time" },
         "total_leads": { "type": "integer" },
-        "from_bucket_a": { "type": "integer", "description": "Лиды из Qualifier Bucket A (уже с контактами)" },
+        "from_bucket_a": { "type": "integer", "description": "Лиды из Discoverer Bucket A (уже с контактами)" },
         "from_bucket_b": { "type": "integer", "description": "Лиды из Enricher (бывший Bucket B)" },
         "session_query": { "type": "string", "description": "Исходный запрос пользователя" }
       }
@@ -30,7 +30,8 @@
           "company_domain": { "type": "string" },
           "country": { "type": ["string", "null"] },
           "seniority": { "type": ["string", "null"] },
-          "source_bucket": { "type": "string", "enum": ["A", "B"], "description": "Откуда пришёл лид: A = Qualifier, B = Enricher" },
+          "vertical": { "type": ["string", "null"], "enum": ["iGaming", "VPN", "Crypto", "Adult", null], "description": "Вертикаль компании — определяется Orchestrator из запроса пользователя" },
+          "source_bucket": { "type": "string", "enum": ["A", "B"], "description": "Откуда пришёл лид: A = Discoverer, B = Enricher" },
           "verification_status": {
             "type": "string",
             "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED", "ROLE_DISCREPANCY", "LEFT_COMPANY"]
@@ -38,10 +39,10 @@
           "verification_note": { "type": "string" },
           "lead_status": {
             "type": "string",
-            "enum": ["Verified", "Partially verified", "Not verified"],
-            "description": "Статус для записи в CRM — Title Case, используется Outreach Writer для фильтрации"
+            "enum": ["Verified", "Partially verified", "Not verified", "Skip"],
+            "description": "Статус для записи в CRM — Title Case. Outreach Writer фильтрует по Verified/Partially verified. Skip-лиды записываются для дедупликации."
           },
-          "email": { "type": ["string", "null"], "description": "Из Qualifier (Bucket A) или Enricher (Bucket B)" },
+          "email": { "type": ["string", "null"], "description": "Из Discoverer (Bucket A) или Enricher (Bucket B)" },
           "email_status": { "type": ["string", "null"], "enum": ["verified", "catchall", "unverified", "unavailable", null] },
           "email_source": { "type": "string", "enum": ["qualifier_pattern", "enricher_apollo", "enricher_free_path"], "description": "Откуда получен email" },
           "phone": { "type": ["string", "null"] },
@@ -81,6 +82,7 @@
           "company_domain": "betano.com",
           "country": "Brazil",
           "seniority": "Manager",
+          "vertical": "iGaming",
           "source_bucket": "A",
           "verification_status": "VERIFIED",
           "verification_note": "LinkedIn актуален, роль подтверждена, спикер на SBC Summit Latam 2025",
@@ -106,6 +108,7 @@
           "company_domain": "superbet.com",
           "country": "Brazil",
           "seniority": "Senior",
+          "vertical": "iGaming",
           "source_bucket": "B",
           "verification_status": "PARTIALLY_VERIFIED",
           "verification_note": "LinkedIn найден, роль совпадает, но email не найден бесплатно",
