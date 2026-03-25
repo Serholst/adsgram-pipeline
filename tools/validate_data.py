@@ -45,7 +45,7 @@ SHEETS_SCOPES = [
 GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 GMAIL_TOKEN_PATH = PROJECT_DIR / "skills" / "gmail-drafter" / "token.json"
-GMAIL_CREDS_PATH = Path.home() / "Documents" / "ai_data" / "gmail_credentials.json"
+GMAIL_CREDS_PATH = PROJECT_DIR / "gmail_credentials.json"
 
 PLACEHOLDER_PATTERNS = [
     "(apollo has_email)",

@@ -17,12 +17,12 @@ automatically.
 ### First-Time Setup (user does manually)
 
 1. **Enable Gmail API** in Google Cloud Console
-   (can use existing project `ibkr-sheets-487100` or create new)
+   (use existing GCP project or create new)
 
 2. **Create OAuth2 Desktop App credential:**
    - Google Cloud Console → APIs & Services → Credentials
    - Create OAuth Client ID → Desktop App
-   - Download JSON → save as `~/Documents/ai_data/gmail_credentials.json`
+   - Download JSON → save as `gmail_credentials.json` in project root
 
 3. **Install dependencies:**
    ```bash

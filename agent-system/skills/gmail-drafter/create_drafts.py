@@ -40,7 +40,7 @@ SCOPES = ["https://www.googleapis.com/auth/gmail.compose"]
 
 # Credentials paths
 SCRIPT_DIR = Path(__file__).parent
-CREDENTIALS_PATH = Path.home() / "Documents" / "ai_data" / "gmail_credentials.json"
+CREDENTIALS_PATH = Path(__file__).resolve().parents[3] / "gmail_credentials.json"
 TOKEN_PATH = SCRIPT_DIR / "token.json"
 
 
