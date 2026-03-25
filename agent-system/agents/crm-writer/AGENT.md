@@ -80,13 +80,13 @@ agent-system/contracts/crm-writer-input.json — объединённый пак
 | Email Status | `email_status` | verified / catchall / unverified / unavailable |
 | Socials | собери из `linkedin_url`, `twitter`, `instagram`, `telegram_handle` (per-lead) + `company_contacts.social_links` (company-level, если есть) | Формат: `LinkedIn: [url] \| TG: @handle \| Twitter: @handle \| IG: @handle`. Только ссылки на соцсети, без источников |
 | Alt Contacts | собери из `phone`, `whatsapp` (per-lead) + `company_contacts.general_email`, `company_contacts.press_email`, `company_contacts.partnerships_email`, `company_contacts.phone` (если есть) | Формат: `Phone: +number \| WhatsApp: +number \| Alt email: press@company.com`. Опционально — заполняй только если данные есть |
-| Sources & Signals | собери из `conference_appearances`, `contact_sources` (per-lead) + `industry_signals` (company-level, если есть) | Формат: `Source: Apollo, ZoomInfo \| Conference: SiGMA 2025 \| Hiring: UA Manager role`. Источники + сигналы для outreach |
-| Lead Status | `lead_status` | Verified / Partially verified / Not verified / Skip |
+| Sources & Signals | собери из `conference_appearances`, `contact_sources` (per-lead) + `industry_signals` (company-level, если есть) + `email_source` (если не null, добавь: `Email via: [discoverer_pattern / enricher_apollo / enricher_free_path]`) | Формат: `Source: Apollo, ZoomInfo \| Conference: SiGMA 2025 \| Hiring: UA Manager role \| Email via: enricher_apollo`. Источники + сигналы для outreach |
+| Lead Status | `lead_status` | Verified / Partially verified / Not verified / Skip (см. glossary в crm-columns.md) |
 | Stage | пусто | заполняется на этапе outreach |
 | First Contact Date | пусто | заполняется при отправке |
 | Last Activity Date | пусто | заполняется при отправке |
 | Suggested CTA | пусто | заполняется на этапе outreach |
-| Notes | `verification_note` + `enrichment_flags` summary | русский где уместно |
+| Notes | `verification_note` + `enrichment_note` (если есть) + `enrichment_flags` summary | русский где уместно |
 
 ## Выход
 

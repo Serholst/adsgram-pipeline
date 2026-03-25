@@ -54,17 +54,13 @@ agent-system/agents/
     └── AGENT.md
 
 agent-system/skills/
-├── prospector/
-│   ├── SKILL.md
-│   └── apollo-search-patterns.md
 ├── outreach/
 │   └── SKILL.md
 ├── autopipeline/
 │   └── SKILL.md
 ├── gmail-drafter/
 │   └── SKILL.md
-└── telegram-sender/
-    └── SKILL.md          ← DEPRECATED (не связан с основным pipeline)
+└── _archive/             ← deprecated skills (prospector, telegram-sender)
 
 agent-system/contracts/
 ├── pre-enricher-output.json
@@ -129,12 +125,12 @@ logs/
 ## Порядок вызова
 
 ```
-0a. Pre-Enricher A →  agent-system/contracts/pre-enricher-output.json       (company-level web recon)
-1.  Searcher       →  agent-system/contracts/searcher-output.json           (Apollo search with Pre-Enricher context)
-0b. Discoverer      →  agent-system/contracts/discoverer-output.json          (contacts + verify + bucket sort)
-3. Enricher      →  agent-system/contracts/enricher-output.json   (CHECKPOINT: одобрение кредитов)
-4. CRM Writer    →  запись в Google Sheets (принимает данные от Discoverer и Enricher)
-5. Outreach Writer → письма                          (CHECKPOINT: одобрение питчей)
+0. Pre-Enricher   →  agent-system/contracts/pre-enricher-output.json       (company-level web recon)
+1. Searcher       →  agent-system/contracts/searcher-output.json           (Apollo search with Pre-Enricher context)
+2. Discoverer     →  agent-system/contracts/discoverer-output.json         (contacts + verify + bucket sort)
+3. Enricher       →  agent-system/contracts/enricher-output.json           (CHECKPOINT: одобрение кредитов)
+4. CRM Writer     →  запись в Google Sheets (принимает данные от Discoverer и Enricher)
+5. Outreach Writer → письма                                               (CHECKPOINT: одобрение питчей)
 ```
 
 **Особенность:** Outreach Writer не получает JSON-контракт. Он читает

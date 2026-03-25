@@ -70,9 +70,8 @@ outreach, автономно координируя агентов. Пользо
 
 Перед запуском проверь:
 
-- Вертикаль в ICP? (iGaming, VPN, crypto)
 - GEO в ICP? (LATAM, Asia, Europe, Africa)
-- Если запрос вне ICP → уточни: «X не в нашем ICP. Продолжить?»
+- Если GEO вне ICP → уточни: «X не в нашем ICP. Продолжить?»
 - Если запрос слишком расплывчатый → конкретизируй:
   «Какой регион? Какая вертикаль?»
 
@@ -139,6 +138,7 @@ Discoverer (Bucket A + SKIP), Enricher (Bucket B), Pre-Enricher (company-level).
 - `email`, `email_status`, `phone` ← из Enricher
 - `email_source` ← `"enricher_apollo"` или `"enricher_free_path"`
   (по enrichment_flags: FREE_PATH_USED → free_path)
+- `enrichment_note` ← из Enricher (описание процесса обогащения)
 - `lead_status` ← маппинг verification_status (Enricher прокидывает
   его из discoverer-output — используй прокинутое значение)
 - `linkedin_url` ← из Enricher или `contacts_found` → CRM: Socials

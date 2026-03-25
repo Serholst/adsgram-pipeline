@@ -113,6 +113,8 @@
 **Bucket B** (нужно платное обогащение):
 - Email не найден бесплатно
 - verification_status: VERIFIED или PARTIALLY_VERIFIED
+  (исключение: NOT_VERIFIED допускается как fallback при ошибке всех
+  источников — если есть apollo_person_id, лид идёт в B, а не Skip)
 - **Обязательно**: есть `apollo_person_id` (без него обогащение невозможно)
 
 **Skip** (пропустить):
@@ -170,10 +172,12 @@ Web-discovered лиды → только A (если есть контакт) и
 - `contacts_found.telegram_handle` — @handle если найден → CRM: Socials
 - `contacts_found.email_pattern` — обнаруженный email pattern
 - `contacts_found.whatsapp` — номер если найден → CRM: Alt Contacts
+- `contacts_found.phone` — телефон если найден → CRM: Alt Contacts
 - `contacts_found.conference_appearances` — список конференций → CRM: Sources & Signals
 - `contacts_found.sources` — откуда что найдено → CRM: Sources & Signals
 - `bucket` — A / B / SKIP
 - `bucket_reason` — почему этот бакет
+- `dedup_status` — NEW / ALREADY_IN_CRM / ALREADY_IN_APOLLO (passthrough из Searcher)
 - `source` — APOLLO или WEB
 
 Web-discovered лиды включаются в основной массив `leads[]` с `source: "WEB"`.

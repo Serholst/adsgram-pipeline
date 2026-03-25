@@ -39,10 +39,11 @@
 
 | Скилл | Путь |
 |-------|------|
-| Prospector | `agent-system/skills/prospector/SKILL.md` |
 | Outreach | `agent-system/skills/outreach/SKILL.md` |
 | Autopipeline | `agent-system/skills/autopipeline/SKILL.md` |
 | Gmail Drafter | `agent-system/skills/gmail-drafter/SKILL.md` |
+
+Archived skills (not active): `agent-system/skills/_archive/`
 
 ## ICP (Ideal Customer Profile)
 

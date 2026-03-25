@@ -1,9 +1,5 @@
 # Ideal Customer Profile (ICP)
 
-## Target Verticals
-- **Primary:** iGaming (online betting, casinos, sports betting), VPN services
-- **Secondary:** crypto/web3
-
 ## Target Roles (in priority order)
 1. Media Buyer / Traffic Manager
 2. User Acquisition (UA) Manager
@@ -43,36 +39,9 @@
 
 ## Apollo Search Parameters
 
-Derived from ICP above. Used by Searcher Agent.
+→ **Canonical source:** `agent-system/reference/apollo-search-patterns.md` — Recipes 1-4, Fallback Escalation Ladder, vertical-specific rules.
 
-### Recipe 1: Standard Search (first attempt)
-
-```json
-{
-  "q_organization_domains_list": ["company.com"],
-  "person_titles": ["media buyer", "traffic manager", "user acquisition",
-    "performance marketing", "growth manager", "growth marketing",
-    "acquisition marketing", "paid media", "digital marketing"],
-  "person_seniorities": ["manager", "senior", "director", "vp"],
-  "contact_email_status": ["verified", "likely to engage"],
-  "per_page": 25
-}
-```
-
-### Recipe 2: Broadened Search (fallback)
-
-```json
-{
-  "q_organization_domains_list": ["company.com"],
-  "person_titles": ["media buyer", "traffic manager", "user acquisition",
-    "performance marketing", "growth", "marketing", "affiliate",
-    "partnerships", "business development", "head of marketing",
-    "CMO", "chief marketing", "CEO", "founder", "managing director"],
-  "per_page": 25
-}
-```
-
-No `person_seniorities`, no `contact_email_status`.
+This file does NOT duplicate recipes. See `apollo-search-patterns.md` for all search parameter details.
 
 ### Batch strategy
 

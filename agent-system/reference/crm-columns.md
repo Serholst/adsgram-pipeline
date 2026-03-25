@@ -36,6 +36,17 @@ SKIP leads (no email, irrelevant role, left company, etc.) are written to CRM wi
 - **Sources & Signals**: fill with sources and signals (even for skipped leads)
 - All other fields (Stage, dates, CTA): leave empty
 
+## Lead Status glossary
+
+| Value | When set | By whom |
+|-------|----------|---------|
+| Verified | Role confirmed via LinkedIn/web | CRM Writer (from Discoverer verification) |
+| Partially verified | Profile found but role/company not 100% match | CRM Writer (from Discoverer verification) |
+| Not verified | LinkedIn not found or no link to company | CRM Writer (from Discoverer verification) |
+| Needs review | Edge case — e.g. email matches but company differs | CRM Writer (dedup conflict) |
+| Skip | Irrelevant role, left company, no data | CRM Writer (from Discoverer bucket) |
+| Processed | Outreach email sent, lead handled | Outreach Writer (after user confirms send) |
+
 ## Stage column values
 
 - `1st letter sent` — initial outreach sent

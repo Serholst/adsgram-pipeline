@@ -59,6 +59,10 @@
             "items": { "type": "string" },
             "description": "Для Bucket B: EMAIL_VERIFIED, EMAIL_CATCHALL и т.д. Для Bucket A и SKIP: пусто"
           },
+          "enrichment_note": {
+            "type": ["string", "null"],
+            "description": "Описание процесса обогащения из Enricher (для Bucket B). null для Bucket A и SKIP."
+          },
           "flags": { "type": "array", "items": { "type": "string" } },
           "company_contacts": {
             "type": ["object", "null"],

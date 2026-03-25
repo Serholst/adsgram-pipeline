@@ -158,7 +158,8 @@ Step 5: Flag for web-only discovery
   "q_organization_domains_list": ["company.com"],
   "person_titles": ["media buyer", "traffic manager", "user acquisition",
     "performance marketing", "growth manager", "growth marketing",
-    "paid media", "digital marketing", "head of marketing", "CMO"],
+    "acquisition marketing", "paid media", "digital marketing",
+    "head of marketing", "CMO"],
   "person_seniorities": ["manager", "senior", "director", "vp"],
   "contact_email_status": ["verified", "likely to engage"],
   "per_page": 25
