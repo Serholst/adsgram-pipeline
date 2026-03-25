@@ -69,17 +69,19 @@ Every lead found through this pipeline is a potential advertiser — someone who
 
 The pipeline has 5 stages. Each stage requires explicit user approval before spending credits.
 
-**Stage overview (v1.3.0 — "Pre-Enrich before Search"):**
-0. **Pre-Enrichment** — web recon at company level: find parent companies, decision maker names, email patterns, verified domains (FREE, NEW in v1.3.0)
+**Stage overview (v1.5.0 — "No Duplicate Searches"):**
+0a. **Pre-Enrichment A** — web recon at COMPANY level: parent companies, decision maker names, email patterns, verified domains (FREE)
 1. **Intake** — load files, build exclusion/dedup sets, confirm scope
-2. **Search** — Apollo people search, now armed with Pre-Enricher context (FREE)
-3. **Discover & Verify** — web search: verify roles, find contacts, discover new leads (FREE)
-4. **Enrich** — Apollo enrichment, ONLY for leads still missing contacts after Stage 3 (PAID, selective)
-5. **Report** — write to CRM, update company database
+2. **Search** — Apollo people search, armed with Pre-Enricher context (FREE)
+0b. **Pre-Enrichment B** — for each lead: find contacts + verify role + assign bucket — all in ONE web search per person. Also discover new leads for 0-result companies. Outputs qualifier-output.json with buckets A/B/Skip (FREE)
+3. **Enrich** — Apollo enrichment, ONLY for Bucket B leads (PAID, selective)
+4. **Report** — write to CRM, update company database
+
+**Qualifier agent eliminated in v1.5.0.** Its three responsibilities (contact discovery, role verification, bucket sort) are now performed by Pre-Enricher Этап B in a single pass. One LinkedIn search per lead yields: profile URL (contact), current employer (verification), and enough data for bucket assignment. Zero duplicate searches.
 
 Two key design principles:
-1. **Pre-enrich companies before Apollo search (Stage 0).** This was introduced in v1.3.0 after the adult/gambling session showed that Apollo has systematic blind spots: misattributed org records (LiveJasmin → wrong entity), post-acquisition org changes (Gamma → Byborg), and industries where employees don't list employers on LinkedIn (adult). Pre-enrichment discovers correct parent companies, verified domains, and decision maker names — giving Apollo better search vectors.
-2. **Collect as much contact data as possible for free (Stage 3) before deciding where to spend Apollo credits (Stage 4).** This was introduced in v1.2.0 after the Nigeria session showed that web search often finds emails, phones, and social contacts that Apollo misses — especially in regions with weak Apollo coverage (Africa, parts of LATAM/Asia).
+1. **Pre-enrich before Apollo search (Stage 0A).** Apollo has systematic blind spots: misattributed org records, post-acquisition org changes, industries where employees hide employers on LinkedIn. Pre-enrichment discovers correct parent companies, verified domains, and decision maker names.
+2. **One search per lead, three outputs (Stage 0B).** A single `"[Name]" "[Company]" LinkedIn` search produces: (a) LinkedIn URL = contact channel, (b) current employer = role verification, (c) enough data for bucket A/B/Skip assignment. Pre-Enricher is the ONLY agent that does free web research.
 
 ### Stage 0: Pre-Enrichment — Company-Level Web Recon (FREE)
 
@@ -289,66 +291,16 @@ Flag any quality concerns:
 - Interns or associates
 - People in unrelated departments
 
-### Stage 3: Discover & Verify — Web Research (FREE)
+### Stage 3: ELIMINATED (v1.5.0)
 
-**This is the key stage that maximizes free contact discovery before any paid enrichment.** Run web search for ALL leads from Stage 2, plus actively search for new leads at companies that returned 0 results from Apollo.
+**The Qualifier agent and Stage 3 have been eliminated.** All three responsibilities (contact discovery, role verification, bucket sort) are now performed by Pre-Enricher Этап B in a single web search pass.
 
-**This stage has three sub-steps that run together:**
+See `agents/pre-enricher/AGENT.md` → Этап B for:
+- Role verification (via LinkedIn search — same search that finds the profile URL)
+- Bucket assignment (A/B/Skip — based on contacts found + verification status)
+- 0-result company lead discovery
 
-**Step 3a: Verify roles via web search.**
-For each lead from Stage 2, search: `"[Name]" "[Company]" [Title] LinkedIn [current year]`
-
-Record verification results in the Notes column with a prefix:
-- `VERIFIED.` — confirmed current role via web
-- `PARTIALLY VERIFIED.` — some info found but title/role not explicitly confirmed
-- `NOT VERIFIED.` — no web presence linking person to company
-- `⚠️ ROLE DISCREPANCY.` — web shows different title than Apollo
-- `⚠️ TITLE DISCREPANCY.` — minor title difference
-- `⚠️ LEFT COMPANY.` — person has moved to a different employer
-
-Update Lead Status based on verification:
-- "Verified" (green) — confirmed
-- "Partially verified" (yellow) — some evidence
-- "Not verified" (orange) — no web trail
-- "Needs review" (red) — discrepancies found
-- "Skip" (red) — irrelevant role or left company
-
-**Step 3b: Search for contact details via web.**
-For each lead (both Apollo-found and newly discovered), actively search for contact channels beyond what Apollo provides. This is critical because Apollo coverage is often weak in Africa, LATAM, and parts of Asia.
-
-**Search sources (in priority order):**
-1. **LinkedIn profiles** — search `"[Name]" "[Company]" site:linkedin.com` to find profile URLs
-2. **Company websites → About/Team pages** — many operators publish team bios. Search `site:[company-domain] team OR about OR leadership`
-3. **Conference speaker lists** — search `"[Name]" speaker OR panelist` at: SBC Africa, SBC Summit, BiS (Brazil), iGB Affiliate, SBWA+, SiGMA, AGE (Africa Gaming Expo)
-4. **ZoomInfo / RocketReach mentions** — search `"[Name]" "[Company]" site:zoominfo.com OR site:rocketreach.co` — often shows masked emails that reveal the email pattern (e.g., `f***@company.com` → firstname@company.com)
-5. **Social media** — search for Twitter/X handles, Instagram, Telegram usernames
-6. **Press / interviews** — industry publications (iGaming Business, SBC News, Gaming Africa) sometimes quote people with contact details
-
-**What to capture in the "Web Search" column:**
-- LinkedIn URL
-- Twitter/X handle
-- Instagram handle
-- WhatsApp / Telegram number
-- Email pattern inferred from ZoomInfo/RocketReach
-- Conference appearances (useful for outreach personalization)
-- Source of each contact channel
-
-Format: `LinkedIn: [url] | Twitter: @handle | WhatsApp: +number | Source: [where found]`
-
-**Step 3c: Discover new leads at companies with 0 Apollo results.**
-For companies that returned zero people from Apollo search (common in Africa/LATAM), run web searches to find decision-makers:
-- `"[company name]" "marketing manager" OR "head of marketing" OR "CMO" OR "media buyer" Nigeria` (adjust country)
-- `site:[company-domain] team OR about OR management`
-- `"[company name]" speaker SBC OR SiGMA OR iGB [current year]`
-
-Add discovered leads to the pipeline with source = "Web" or "Conference". These leads can still be enriched via Apollo in Stage 4 if needed.
-
-**Present results to user as an updated table** showing:
-- All leads from Stage 2 with verification status + discovered contact channels
-- New leads found via web search (marked with 🆕)
-- For each lead: which contact channels are already available vs. which are still missing
-
-**This table is the decision basis for Stage 4.** The user can see exactly which leads already have enough contact info (skip enrichment) vs. which ones need Apollo (proceed to Stage 4).
+The output of Pre-Enricher Этап B is `qualifier-output.json` (same schema, same contract — downstream agents are unaffected).
 
 This step uses web search only — zero Apollo credits.
 

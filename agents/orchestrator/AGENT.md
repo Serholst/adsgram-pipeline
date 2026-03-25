@@ -129,13 +129,13 @@ LEFT_COMPANY и SKIP не попадают в CRM Writer input —
 Запрос пользователя
     │
     ▼
-PRE-ENRICHER ← список компаний (домены или вертикаль+GEO)
+PRE-ENRICHER (Этап A) ← список компаний (домены или вертикаль+GEO)
     │
     ▼ pre-enricher-output.json
-    │  (обогащённые данные: parent companies, decision makers,
+    │  (company intelligence: parent companies, decision makers,
     │   email patterns, search vectors для Apollo)
     │
-SEARCHER ← задача от тебя + контекст от Pre-Enricher
+SEARCHER ← задача от тебя + контекст от Pre-Enricher Этап A
     │       (search vectors: parent domains, person names,
     │        verified domains, alternative org names)
     │
@@ -146,9 +146,15 @@ SEARCHER ← задача от тебя + контекст от Pre-Enricher
     │   └─ исчерпано → сообщи пользователю, стоп
     │
     ▼ searcher-output.json
-QUALIFIER ← JSON от Searcher целиком + контекст от Pre-Enricher
-    │       (known_decision_makers и company_contacts передаются
-    │        как дополнительные данные для web-discovered leads)
+PRE-ENRICHER (Этап B) ← searcher-output.json от тебя
+    │  Для каждого лида за ОДИН поиск:
+    │  1) найти контакты (LinkedIn URL, email pattern, social)
+    │  2) верифицировать роль (ещё работает в компании?)
+    │  3) назначить бакет (A/B/Skip)
+    │  + для компаний с 0 результатов: найти людей через веб
+    │
+    ▼ qualifier-output.json
+    │  (лиды + contacts_found + verification_status + bucket)
     │
     ├─ 80%+ Skip? → запиши feedback для Searcher в лог,
     │               предупреди пользователя на чекпойнте
@@ -218,10 +224,10 @@ QUALIFIER ← JSON от Searcher целиком + контекст от Pre-Enri
 - `leads` не пуст → передавай Qualifier целиком + `domains_audit`
   (Qualifier использует pattern info для приоритизации web discovery)
 
-### Qualifier
+### Pre-Enricher (Этап B) → qualifier-output.json
 
-- Парсишь `qualifier-output.json`
-- Считай `qualifier_metadata`: bucket_a, bucket_b, skipped
+- Парсишь `qualifier-output.json` (выход Этапа B Pre-Enricher)
+- Считай метаданные: bucket_a, bucket_b, skipped
 - Skip >80% → предупреди пользователя + feedback для Searcher
 - Bucket B пуст → пропусти Enricher, иди в CRM Writer с Bucket A
 
@@ -251,9 +257,8 @@ QUALIFIER ← JSON от Searcher целиком + контекст от Pre-Enri
 
 | Агент | Max retry | Когда retry |
 |---|---|---|
-| Pre-Enricher | 0 | Не перезапускается (best effort) |
+| Pre-Enricher (A+B) | 0 | Не перезапускается (best effort) |
 | Searcher | 2 | 0 результатов + есть рекомендация по расширению |
-| Qualifier | 0 | Не перезапускается (работает с тем что есть) |
 | Enricher | 1 | Только если API error, не если результат слабый |
 | CRM Writer | 1 | Только если "blocked" из-за временной проблемы (file locked) |
 | Outreach Writer | 0 | Не перезапускается (пользователь правит на checkpoint) |

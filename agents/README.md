@@ -8,9 +8,9 @@
     ▼
 Orchestrator ── управляет потоком данных через Agent tool
     │
-    ├─→ Pre-Enricher    → JSON → Orchestrator (company-level web recon)
+    ├─→ Pre-Enricher A  → JSON → Orchestrator (company-level web recon)
     ├─→ Searcher        → JSON → Orchestrator (armed with Pre-Enricher context)
-    ├─→ Qualifier        → JSON → Orchestrator
+    ├─→ Pre-Enricher B  → JSON → Orchestrator (contacts + verify + bucket sort)
     │   ══ CHECKPOINT 1: одобрение кредитов ══
     ├─→ Enricher         → JSON → Orchestrator
     ├─→ CRM Writer       ← объединённый пакет от Orchestrator
@@ -97,7 +97,7 @@ logs/
 |  | `skills/adsgram-prospector/apollo-search-patterns.md` | Patterns 1-2 (what Searcher expects) |
 | Searcher | `skills/adsgram-prospector/SKILL.md` | Stage 1 (Intake), Stage 2 (Search) |
 |  | `skills/adsgram-prospector/apollo-search-patterns.md` | 5 failure patterns, fallback ladder, recipes |
-| Qualifier | `skills/adsgram-prospector/SKILL.md` | Stage 3 (Discover & Verify) |
+| ~~Qualifier~~ | ELIMINATED v1.5.0 — absorbed into Pre-Enricher Этап B | — |
 | Enricher | `skills/adsgram-prospector/SKILL.md` | Stage 4 (Enrich), Credit Management |
 | CRM Writer | `skills/adsgram-prospector/SKILL.md` | Stage 5 (Report) |
 | Outreach Writer | `skills/adsgram-outreach/SKILL.md` | Целиком |
@@ -123,9 +123,9 @@ logs/
 ## Порядок вызова
 
 ```
-0. Pre-Enricher  →  contracts/pre-enricher-output.json
-1. Searcher      →  contracts/searcher-output.json  (uses Pre-Enricher context)
-2. Qualifier     →  contracts/qualifier-output.json
+0a. Pre-Enricher A →  contracts/pre-enricher-output.json       (company-level web recon)
+1.  Searcher       →  contracts/searcher-output.json           (Apollo search with Pre-Enricher context)
+0b. Pre-Enricher B →  contracts/qualifier-output.json          (contacts + verify + bucket sort)
 3. Enricher      →  contracts/enricher-output.json   (CHECKPOINT: одобрение кредитов)
 4. CRM Writer    →  запись в Excel (принимает данные от Qualifier и Enricher)
 5. Outreach Writer → письма                          (CHECKPOINT: одобрение питчей)
