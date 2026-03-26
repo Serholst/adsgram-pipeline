@@ -19,6 +19,7 @@ This file serves two purposes and MUST be read at the start of every prospecting
 - H: Ticker
 - I: Prospected ← **non-empty = excluded from search** ("Processed", "Trash", "Yes YYYY-MM-DD", etc.)
 - J: Search Results ← **if contains "excluded" → company excluded from search**
+- K: Company Contacts ← JSON с контактами компании (phone, emails, socials, address, employees, linkedin). Пустые поля не включаются.
 
 ### How to load exclusion domains
 
@@ -41,21 +42,76 @@ Returns JSON:
 
 Store `excluded_domains` as `exclusion_domains` — you'll need it throughout the session.
 
-### How to update after prospecting
+### How to update: TWO writes per session
 
-MANDATORY for ALL searched companies, including those with 0 results.
+Company DB is updated TWICE during a pipeline session:
 
-Save new companies to `/tmp/companies_batch.json` and append:
+#### Write 1: BEFORE Apollo People Search (Step 1d-post)
+
+Immediately after the validation gate approves companies and BEFORE any Apollo People Search, write all approved companies to Company DB:
 
 ```bash
-python3 tools/sheets_helper.py companydb-append-rows /tmp/companies_batch.json
+python3 tools/sheets_helper.py companydb-append-rows /tmp/companies_pre.json
 ```
 
-- Add each newly searched company (even if zero leads were found)
 - Set column I to "Yes (YYYY-MM-DD)"
-- Set column J to a summary: "N leads found: [roles]. [quality notes]. [flags like CATCHALL, weak coverage, etc.]"
+- Set column J to "Searching..." (placeholder)
+- **Why before search?** If the pipeline crashes mid-search, these companies are already marked as prospected. This prevents re-searching them in the next session.
+
+#### Write 2: AFTER enrichment (final update)
+
+After all enrichment is complete, update the same rows with search results:
+
+```bash
+python3 tools/sheets_helper.py companydb-update-cells /tmp/companies_post.json
+```
+
+- Update column J with: "N leads found: [roles]. [quality notes]. [flags like CATCHALL, weak coverage, etc.]"
 - If zero results: "0 relevant leads. [reason: weak Apollo coverage / only BD roles / etc.]"
-- **This is a hard requirement.** Every company that was sent to Apollo people search MUST be recorded, regardless of outcome.
+- Update column K ("Company Contacts") with JSON containing all company-level contacts (see section below)
+- **This is a hard requirement.** Every company that was sent to Apollo people search MUST have its Search Results updated.
+
+JSON file format for `companydb-update-cells`:
+
+```json
+[
+  {
+    "company": "Superbet",
+    "updates": {
+      "Search Results": "3 leads found: Growth Manager, UA Manager, Media Buyer. 2 verified.",
+      "Company Contacts": "{\"phone\":\"+40213100100\",\"general_email\":\"info@superbet.com\",\"address\":\"Bucharest, Romania\",\"employees\":3500,\"linkedin\":\"https://linkedin.com/company/superbet\"}"
+    }
+  }
+]
+```
+
+### Company-level contacts from Apollo enrichment
+
+Apollo `people_match` responses include `organization` data. For each UNIQUE company encountered during enrichment, extract and store in column K ("Company Contacts") as a JSON string.
+
+Fields to extract from Apollo `organization` object:
+
+- `organization.phone` → `"phone"` in JSON
+- `organization.raw_address` → `"address"` in JSON
+- `organization.organization_revenue_printed` → `"revenue"` in JSON (also update column F if empty)
+- `organization.linkedin_url` → `"linkedin"` in JSON
+- `organization.estimated_num_employees` → `"employees"` in JSON
+
+Additionally, merge Pre-Enricher `company_contacts` into the same JSON:
+
+- `company_contacts.general_email` → `"general_email"`
+- `company_contacts.press_email` → `"press_email"`
+- `company_contacts.partnerships_email` → `"partnerships_email"`
+- `company_contacts.phone` → `"phone"` (Pre-Enricher value; Apollo overwrites if available)
+- `company_contacts.social_links.*` → `"twitter"`, `"instagram"`, `"telegram"`, `"tiktok"`, etc.
+
+Omit null/empty fields from JSON for compactness. Example:
+
+```json
+{"phone": "+40213100100", "general_email": "info@superbet.com", "partnerships_email": "partners@superbet.com", "address": "Bucharest, Romania", "employees": 3500, "linkedin": "https://linkedin.com/company/superbet", "twitter": "@superbet", "instagram": "@superbet"}
+```
+
+**Do NOT discard organization data.** It is the only source of company-level contacts for companies where all individual emails are unavailable (e.g., OnlyFans, XVideos, BangBros in the Adult session).
 
 ---
 

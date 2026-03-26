@@ -5,6 +5,21 @@
   "type": "object",
   "required": ["enricher_metadata", "leads"],
   "properties": {
+    "organization_data": {
+      "type": "object",
+      "description": "Company-level data from Apollo organization objects, keyed by company_domain. One entry per unique company encountered during enrichment. Optional — omit if no organization data was returned by Apollo.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "company_name": { "type": "string" },
+          "phone": { "type": ["string", "null"] },
+          "raw_address": { "type": ["string", "null"] },
+          "revenue_printed": { "type": ["string", "null"] },
+          "linkedin_url": { "type": ["string", "null"] },
+          "estimated_num_employees": { "type": ["integer", "null"] }
+        }
+      }
+    },
     "enricher_metadata": {
       "type": "object",
       "required": ["timestamp", "total_requested", "total_approved", "credits_spent", "credits_remaining", "emails_found", "emails_not_found"],
@@ -75,6 +90,24 @@
   },
   "examples": [
     {
+      "organization_data": {
+        "superbet.com": {
+          "company_name": "Superbet",
+          "phone": "+40213100100",
+          "raw_address": "Bucharest, Romania",
+          "revenue_printed": "$500M",
+          "linkedin_url": "https://linkedin.com/company/superbet",
+          "estimated_num_employees": 3500
+        },
+        "stake.com": {
+          "company_name": "Stake",
+          "phone": null,
+          "raw_address": "Curacao",
+          "revenue_printed": null,
+          "linkedin_url": "https://linkedin.com/company/stake",
+          "estimated_num_employees": 1000
+        }
+      },
       "enricher_metadata": {
         "timestamp": "2026-03-20T15:30:00Z",
         "total_requested": 4,

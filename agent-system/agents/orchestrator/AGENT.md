@@ -189,6 +189,14 @@ SKIP-лиды записываются в CRM с причиной в Notes — C
 Запрос пользователя
     │
     ▼
+EXCLUSION + DEDUP GATES (Steps 1a-1e)
+    │
+    ▼ approved companies list
+COMPANY DB WRITE 1 ← записать все approved компании
+    │                 с "Prospected: Yes", "Searching..."
+    │                 (защита от потери при crash)
+    │
+    ▼
 PRE-ENRICHER (Этап A) ← список компаний (домены или вертикаль+GEO)
     │
     ▼ pre-enricher-output.json
@@ -238,6 +246,11 @@ DISCOVERER ← searcher-output.json от тебя
     │                    │
     │              status: blocked? → покажи escalation, стоп
     │              status: partial? → покажи rejection_details
+    │                    │
+    │                    ▼
+    │            COMPANY DB WRITE 2 ← обнови Search Results
+    │              для каждой компании + сохрани company contacts
+    │              (phone, revenue, address из Apollo responses)
     │                    │
     │                    ▼
     │            OUTREACH WRITER ← читает CRM
@@ -308,6 +321,7 @@ DISCOVERER ← searcher-output.json от тебя
 - Парсишь `enricher-output.json`
 - Считай `enricher_metadata`: success_rate, credits_spent, recommendation
 - success_rate <50% → включи recommendation в SUMMARY
+- Извлеки `organization_data` — company-level данные (phone, address, revenue, employees, linkedin_url) по доменам. Сохрани в контексте для COMPANY DB WRITE 2.
 - Собирай пакет для CRM Writer (Bucket A + enriched Bucket B + SKIP)
 
 ### CRM Writer
@@ -317,6 +331,46 @@ DISCOVERER ← searcher-output.json от тебя
   - `status: "partial"` → покажи пользователю rejection_details,
     продолжай к Outreach Writer (записанные лиды доступны)
   - `status: "blocked"` → покажи пользователю escalation. СТОП.
+
+### COMPANY DB WRITE 2 (после CRM Writer, перед Outreach Writer)
+
+После CRM Writer обнови Company DB для каждой компании, которая была в поиске.
+Собери JSON для колонки "Company Contacts" из двух источников:
+
+1. **Pre-Enricher** `company_contacts` (general_email, press_email, partnerships_email, phone, social_links)
+2. **Enricher** `organization_data[domain]` (phone, raw_address, linkedin_url, estimated_num_employees, revenue_printed)
+
+Merge-правило: Enricher данные дополняют Pre-Enricher. Если оба источника имеют `phone` — используй Apollo (точнее).
+
+Сохрани в `/tmp/companies_post.json` и запусти:
+
+```bash
+python3 tools/sheets_helper.py companydb-update-cells /tmp/companies_post.json
+```
+
+Формат JSON:
+
+```json
+[
+  {
+    "company": "Superbet",
+    "updates": {
+      "Search Results": "3 leads found: Growth Manager, UA Manager, Media Buyer. 2 verified emails. 1 catchall.",
+      "Company Contacts": "{\"phone\":\"+40213100100\",\"general_email\":\"info@superbet.com\",\"partnerships_email\":\"partners@superbet.com\",\"address\":\"Bucharest, Romania\",\"employees\":3500,\"linkedin\":\"https://linkedin.com/company/superbet\",\"twitter\":\"@superbet\"}"
+    }
+  }
+]
+```
+
+Поля "Company Contacts":
+
+- Из Enricher `organization_data`: `phone`, `address`, `employees`, `linkedin`, `revenue`
+- Из Pre-Enricher `company_contacts`: `general_email`, `press_email`, `partnerships_email`, `twitter`, `instagram`, `telegram`, `tiktok`
+- Пустые/null поля НЕ включай в JSON
+
+Также обнови "Est. Revenue 2024 ($M)" (column F) если текущее значение пустое и Enricher вернул `revenue_printed`.
+
+**Это обязательное требование.** Каждая компания, отправленная в Apollo people search, ДОЛЖНА получить обновлённые Search Results и Company Contacts.
 
 ### Outreach Writer
 

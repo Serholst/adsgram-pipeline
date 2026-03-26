@@ -110,6 +110,24 @@ Discoverer output. Если passthrough-поля потеряны — сборк
   MISSING_APOLLO_ID
 - `enrichment_note` — что произошло при обогащении
 
+### Organization data (company-level)
+
+Apollo `people_match` returns an `organization` object for each lead.
+For each UNIQUE `company_domain` in the batch, extract from the FIRST
+successful `people_match` response that includes organization data:
+
+- `organization.phone` → `organization_data[domain].phone`
+- `organization.raw_address` → `organization_data[domain].raw_address`
+- `organization.organization_revenue_printed` → `organization_data[domain].revenue_printed`
+- `organization.linkedin_url` → `organization_data[domain].linkedin_url`
+- `organization.estimated_num_employees` → `organization_data[domain].estimated_num_employees`
+
+Output this as `organization_data` (keyed by `company_domain`) at the
+top level of enricher-output.json, alongside `enricher_metadata` and `leads`.
+
+**Do NOT discard organization data.** For companies where all individual
+emails are unavailable, this may be the only source of company-level contacts.
+
 ### Metadata (обязательные)
 
 - `credits_spent`, `credits_remaining`, `credits_saved`
