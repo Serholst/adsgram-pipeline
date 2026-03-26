@@ -60,6 +60,8 @@
             "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED", "ROLE_DISCREPANCY", "LEFT_COMPANY"],
             "description": "Passthrough из Discoverer — нужен Orchestrator для сборки CRM Writer input"
           },
+          "headline": { "type": ["string", "null"], "description": "Passthrough из Discoverer — LinkedIn headline лида. Напр. 'Driving Profitable UA in FX & FinTech'" },
+          "role_description": { "type": ["string", "null"], "description": "Описание текущей позиции из Apollo employment_history (current=true). Извлекается при enrichment из apollo_people_match. Напр. 'Managing $2M monthly ad spend across Meta, Google, TikTok'. Если Discoverer уже нашёл — passthrough, иначе Enricher заполняет из Apollo." },
           "verification_note": { "type": "string", "description": "Passthrough из Discoverer — персонализационные сигналы" },
           "enrichment_flags": {
             "type": "array",
@@ -112,6 +114,8 @@
             "sources": ["LinkedIn", "Twitter"]
           },
           "verification_status": "PARTIALLY_VERIFIED",
+          "headline": "Scaling UA across LatAm | Superbet",
+          "role_description": "Leading user acquisition strategy for LatAm markets. Managing performance campaigns across Meta, Google, TikTok with $1.5M monthly budget.",
           "verification_note": "LinkedIn найден, роль совпадает, но email не найден бесплатно",
           "enrichment_flags": ["EMAIL_VERIFIED", "FREE_PATH_USED"],
           "enrichment_note": "Email найден через бесплатный re-query по паттерну домена"
@@ -141,6 +145,8 @@
             "sources": ["LinkedIn"]
           },
           "verification_status": "VERIFIED",
+          "headline": "UA Manager | iGaming | Performance Marketing",
+          "role_description": null,
           "verification_note": "LinkedIn актуален, роль UA Manager подтверждена",
           "enrichment_flags": ["EMAIL_NOT_FOUND"],
           "enrichment_note": "Apollo вернул null, LinkedIn URL не помог. Домен stake.com — catchall не подтверждён."

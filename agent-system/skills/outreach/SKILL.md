@@ -37,7 +37,7 @@ All domain knowledge lives in `agent-system/reference/`:
 
 | Document | What it contains | When to read |
 |---|---|---|
-| `reference/outreach-templates.md` | Product Card + Personalized Pitch structures, choosing logic, all examples | **Always** — before writing any email |
+| `reference/outreach-templates.md` | Pattern Decision Matrix (Cells A/B/C/D), Role Pain Tagline Table, Company Signal Relief Table, base templates (Product Card v3, Personalized Pitch v2), Role-Based CTA | **Always** — before writing any email |
 | `reference/outreach-rules.md` | Pre-pitch research, forbidden elements, language rules, checklists, output format, CRM update rules | **Always** — defines how to write and what to avoid |
 | `reference/outreach-benchmarks.md` | CPM/CTR table by country, monthly views formula, case study | **On demand** — when P.S. or data needed for specific lead's country |
 

@@ -86,6 +86,7 @@ agent-system/contracts/enricher-output.json
 
 - `verification_status` — нужен Orchestrator для маппинга lead_status
 - `verification_note` — персонализационные сигналы
+- `headline` — LinkedIn headline лида (для role-based CTA в outreach)
 - `seniority` — нужен CRM Writer для priority sorting (Director/VP первыми)
 - `contacts_found` — контакты, найденные Discoverer на предыдущем этапе.
   Копируй из входа без изменений (имя поля одинаковое на входе и выходе).
@@ -100,6 +101,10 @@ Discoverer output. Если passthrough-поля потеряны — сборк
 - `email` — найденный email или null
 - `email_status` — verified / catchall / unverified / unavailable
 - `phone` — если Apollo вернул
+- `role_description` — если `apollo_people_match` вернул `employment_history[]`,
+  найди запись с `current: true` в target компании и возьми `description`.
+  Если Discoverer уже заполнил `role_description` на входе — используй его
+  (не перезаписывай). Если ни Discoverer, ни Apollo не дали — null.
 - `enrichment_flags` — EMAIL_VERIFIED, EMAIL_CATCHALL, EMAIL_NOT_FOUND,
   EMAIL_UNVERIFIED, JOB_CHANGED, LEFT_COMPANY, FREE_PATH_USED,
   MISSING_APOLLO_ID

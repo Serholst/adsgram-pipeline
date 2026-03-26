@@ -86,7 +86,7 @@ agent-system/contracts/crm-writer-input.json — объединённый пак
 | First Contact Date | пусто | заполняется при отправке |
 | Last Activity Date | пусто | заполняется при отправке |
 | Suggested CTA | пусто | заполняется на этапе outreach |
-| Notes | `verification_note` + `enrichment_note` (если есть) + `enrichment_flags` summary | русский где уместно |
+| Notes | `verification_note` + `headline` (если есть, формат: `Headline: [текст]`) + `role_description` (если есть, формат: `Role desc: [текст]`) + `enrichment_note` (если есть) + `enrichment_flags` summary | русский где уместно. Headline и Role desc записывай на языке оригинала (обычно EN) |
 
 ## Выход
 

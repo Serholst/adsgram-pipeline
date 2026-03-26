@@ -122,6 +122,8 @@ Discoverer (Bucket A + SKIP), Enricher (Bucket B), Pre-Enricher (company-level).
 - `email_status` ← `"unverified"` (email из web-pattern, не проверен через Apollo)
 - `email_source` ← `"discoverer_pattern"`
 - `lead_status` ← маппинг verification_status (см. таблицу ниже)
+- `headline` ← passthrough из Discoverer (LinkedIn headline) → CRM: Notes
+- `role_description` ← passthrough из Discoverer (описание позиции) → CRM: Notes
 - `linkedin_url` ← `contacts_found.linkedin_url` → CRM: Socials
 - `twitter` ← `contacts_found.twitter` → CRM: Socials
 - `instagram` ← `contacts_found.instagram` → CRM: Socials
@@ -141,6 +143,8 @@ Discoverer (Bucket A + SKIP), Enricher (Bucket B), Pre-Enricher (company-level).
 - `enrichment_note` ← из Enricher (описание процесса обогащения)
 - `lead_status` ← маппинг verification_status (Enricher прокидывает
   его из discoverer-output — используй прокинутое значение)
+- `headline` ← passthrough из Enricher (LinkedIn headline) → CRM: Notes
+- `role_description` ← из Enricher (может быть обогащено из Apollo employment_history) → CRM: Notes
 - `linkedin_url` ← из Enricher или `contacts_found` → CRM: Socials
 - `twitter` ← из `contacts_found` → CRM: Socials
 - `instagram` ← из `contacts_found` → CRM: Socials
@@ -156,6 +160,8 @@ Discoverer (Bucket A + SKIP), Enricher (Bucket B), Pre-Enricher (company-level).
 - `email` ← `contacts_found.email_pattern` (если есть — полезно для dedup)
 - `email_source` ← `"discoverer_pattern"` (если email есть) или null
 - `email_status` ← `"unverified"` (если email есть) или null
+- `headline` ← passthrough из Discoverer (если есть)
+- `role_description` ← passthrough из Discoverer (если есть)
 - `linkedin_url`, `twitter`, `instagram`, `telegram_handle`, `whatsapp`,
   `phone` ← из `contacts_found` (если есть — полезно для будущих сессий)
 - `conference_appearances`, `contact_sources` ← из `contacts_found`

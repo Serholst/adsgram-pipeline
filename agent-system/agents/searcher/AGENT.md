@@ -80,7 +80,17 @@ agent-system/contracts/searcher-output.json
 
 Обязательные поля: `search_metadata` (query, domains_searched,
 domains_blocked, счётчики) + `leads[]` (apollo_person_id,
-имя, title, company, domain, country, dedup_status, flags).
+имя, title, company, domain, country, headline, dedup_status, flags).
+
+### LinkedIn Headline
+
+Apollo People Search возвращает поле `headline` — самоописание лида
+в LinkedIn. Примеры: "Driving Profitable User Acquisition in FX & FinTech",
+"Senior Media Buyer at TrafficStars".
+
+**Обязательно** сохраняй `headline` для каждого лида. Если Apollo
+не вернул — `null`. Это поле используется Outreach Writer для
+Role-Based CTA (адаптация письма под фокус конкретного ЛПР).
 
 ## Ограничения по инструментам
 

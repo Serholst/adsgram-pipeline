@@ -94,12 +94,13 @@ For each lead, output:
 ## [Lead Name] — [Company]
 
 ВЕРИФИКАЦИЯ: [Confirmed / Role changed / Left company / Cannot verify — 1 sentence]
-STRUCTURE: [Product Card / Personalized Pitch — and why]
-СИГНАЛ: [What specific signal we found — 1-2 sentences] (Personalized Pitch only)
+CELL: [A / B / C / D] — Signal=[YES/NO], Pain=[YES/NO]
+СИГНАЛ: [What specific company signal we found — 1-2 sentences] (Cells A, C only; for B, D write "—")
+ROLE PAIN: [Headline/JD insight that drove Pain=YES] (Cells A, B only; for C, D write "—")
 GEO LOGIC: [Single market: [country] / Worldwide: [reason] — determines subject geo and P.S. presence]
 
 To: [email address from CRM]
-Subject: [subject line — one for Product Card, A+B for Personalized Pitch]
+Subject: [subject line per cell rules from outreach-templates.md]
 
 ```[ready-to-send message]```
 
@@ -120,31 +121,31 @@ For batch mode, output all leads sequentially with `---` separators.
 
 ## Pre-Send Checklist
 
-### Product Card checklist:
-- [ ] Subject has format: `Telegram ads (paid & native) — [vertical], [geo]`
+### Matrix cell checklist (all cells):
+- [ ] Cell correctly determined: Signal=[YES/NO] × Pain=[YES/NO] → A/B/C/D
+- [ ] Subject follows cell-specific rules from `outreach-templates.md` → Subject Line Rules
+- [ ] Tagline/Signal relief matches the selected cell (A: tagline + signal in subject; B: tagline, no signal; C: signal relief, no tagline; D: none)
 - [ ] Vertical matches the **company's** industry
-- [ ] Geo: single market (1 country) → country name; 2+ markets or offshore HQ → "60+ countries"
+- [ ] Geo logic correct: single market → country name; 2+ markets or offshore HQ → "60+ countries"
 - [ ] Formats line matches vertical (iGaming: text/video/native; Adult: video/native/adult ai-engagement)
 - [ ] Stats line: `11M+ views/month, CTR 1.7% – @moslender, built-in anti-fraud` — link intact
-- [ ] Clients line: present for iGaming (1xBet), omitted for adult/VPN
+- [ ] Work with line: present for iGaming (1xBet), omitted for adult/VPN
 - [ ] Signature: just `Sergo` + contacts, no title, no CTA text
-- [ ] P.S.: present ONLY for single-market leads, absent for worldwide
+- [ ] P.S. follows cell-specific rules (A: geo as example; B/D: single-market only; C: no P.S.)
 - [ ] P.S. data matches benchmarks table for the lead's country
 - [ ] Language matches the lead's country
 - [ ] No greeting ("Hey [Name]"), no "I'm Sergo", no storytelling
+- [ ] Under 600 characters body
+- [ ] Output includes To: email address
 
-### Personalized Pitch checklist:
+### Personalized Pitch checklist (Cells A, C only):
 - [ ] Paragraph 1 explains what AdsGram sells (no "I'm Sergo from...")
 - [ ] Paragraph 2 has ONE observation + Telegram question + test period mention
 - [ ] Paragraph 3 has a soft CTA
-- [ ] Language matches the lead's country
 - [ ] Simple, clear phrasing — no complex idioms in any language
 - [ ] No evaluations or compliments after facts
 - [ ] No placeholders ($X, X%)
 - [ ] No invented numbers
-- [ ] Signature is just "Sergo" (no title in body)
-- [ ] Under 600 characters body
-- [ ] Output includes To: email address
 
 ---
 

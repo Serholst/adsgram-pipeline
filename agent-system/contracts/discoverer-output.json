@@ -40,6 +40,8 @@
             "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED", "ROLE_DISCREPANCY", "LEFT_COMPANY", "SKIP"]
           },
           "verification_note": { "type": "string", "description": "Краткое пояснение результата верификации" },
+          "headline": { "type": ["string", "null"], "description": "LinkedIn headline из Apollo (passthrough из Searcher). Напр. 'Driving Profitable UA in FX & FinTech'" },
+          "role_description": { "type": ["string", "null"], "description": "Описание текущей позиции из LinkedIn, если найдено при верификации. Напр. 'Managing $2M monthly ad spend across Meta, Google, TikTok'" },
           "contacts_found": {
             "type": "object",
             "properties": {
@@ -88,6 +90,8 @@
           "source": "APOLLO",
           "verification_status": "VERIFIED",
           "verification_note": "LinkedIn актуален, роль подтверждена, спикер на SBC Summit Latam 2025",
+          "headline": "Senior Media Buyer | Performance Marketing | iGaming",
+          "role_description": null,
           "contacts_found": {
             "linkedin_url": "https://linkedin.com/in/carlosmendes",
             "twitter": null,
@@ -116,6 +120,8 @@
           "source": "APOLLO",
           "verification_status": "PARTIALLY_VERIFIED",
           "verification_note": "LinkedIn найден, роль совпадает, но email не найден бесплатно",
+          "headline": "Scaling UA across LatAm | Superbet",
+          "role_description": "Leading user acquisition strategy for LatAm markets, managing paid campaigns across Meta, Google, and programmatic",
           "contacts_found": {
             "linkedin_url": "https://linkedin.com/in/ana-silva-superbet",
             "twitter": "@anasilva_mkt",

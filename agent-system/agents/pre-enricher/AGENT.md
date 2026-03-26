@@ -88,6 +88,11 @@
 - `"[company name]" hiring OR careers site:linkedin.com/jobs`
 - `"[company name]" site:indeed.com OR site:glassdoor.com`
 - Цель: имена hiring managers, email рекрутеров, tech stack, локации офисов
+- **ICP-relevant hiring signal:** если компания нанимает на роли из ICP
+  (Media Buyer, UA Manager, Performance Marketing, Growth, Traffic Manager) —
+  сохрани в `industry_signals[]` в формате: `"Hiring: [роль], [локация]"`.
+  Примеры: `"Hiring: Media Buyer, LATAM"`, `"Hiring: UA Manager, São Paulo"`.
+  Это сигнал расширения — Outreach Writer использует для персонализации CTA
 
 **Шаг 7: Конференции и спикеры**
 - Для iGaming: `"[company name]" speaker SBC OR SiGMA OR ICE OR iGB OR AGE [текущий год]`

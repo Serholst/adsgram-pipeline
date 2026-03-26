@@ -57,8 +57,13 @@
 
 `searcher-output.json` от Orchestrator — массив лидов с полями:
 `first_name`, `last_name`, `title`, `company`, `company_domain`,
-`seniority`, `has_email`, `linkedin_url`, `flags`.
+`seniority`, `has_email`, `headline`, `linkedin_url`, `flags`.
 Плюс `domains_audit` с информацией о паттернах отказа.
+
+### Новые поля от Apollo (passthrough)
+
+- `headline` — LinkedIn headline из Apollo (напр. "Driving Profitable UA in FX & FinTech").
+  **Просто пробрось в output.** Не трать web-запросы на поиск headline.
 
 Ключевое поле для оптимизации:
 
@@ -78,6 +83,10 @@
 - **LinkedIn URL** → `contacts_found.linkedin_url`
 - **Текущая роль** → совпадает с Apollo title? → `verification_status`
 - **Локация** → для персонализации
+- **Role description** → если в LinkedIn-сниппете видно описание текущей позиции
+  (напр. "Managing $2M monthly ad spend across Meta, Google, TikTok") →
+  сохрани в `role_description`. Это описание текущей позиции, не headline.
+  **Не трать дополнительных запросов** — бери только если попалось в результатах.
 
 Если LinkedIn не нашёлся → `"[First] [Last]" "[Company]"` (без site:)
 
@@ -166,6 +175,8 @@ Web-discovered лиды → только A (если есть контакт) и
 Для каждого лида:
 - `verification_status` — VERIFIED / PARTIALLY_VERIFIED / NOT_VERIFIED / LEFT_COMPANY / SKIP
 - `verification_note` — краткое пояснение + персонализационные сигналы
+- `headline` — passthrough из Searcher (LinkedIn headline из Apollo). null если отсутствует
+- `role_description` — описание текущей позиции, если найдено при верификации. null если нет
 - `contacts_found.linkedin_url` — URL профиля → CRM: Socials
 - `contacts_found.twitter` — handle → CRM: Socials
 - `contacts_found.instagram` — handle если найден → CRM: Socials
