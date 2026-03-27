@@ -112,6 +112,30 @@ By default use **Subject A** (volume-first). Override rules:
 - User specifies per-lead → follow their choice
 - If unsure → ask user at Checkpoint 2
 
+## Step 4: Update CRM after drafts created
+
+After successful draft creation, **immediately** update CRM for all leads in the batch:
+
+```bash
+python3 tools/sheets_helper.py crm-update-cells /tmp/crm_draft_updates.json
+```
+
+For each lead with a draft:
+
+- **Stage** → `Draft`
+- **First Contact Date** → today's date
+- **Suggested CTA** → full email text (Subject + Body)
+
+For warning/skip leads (drafts prepared but flagged):
+
+- **Stage** → `Draft`
+- **First Contact Date** → today's date
+- **Notes** → append `OUTREACH SKIP: [reason]` (use `"+|text"` prefix for append)
+
+⚠️ **Do NOT skip this step.** First Contact Date must be set at draft creation time.
+
+See `agent-system/reference/outreach-rules.md` → "CRM Update" for full rules.
+
 ## Error Handling
 
 - **Auth expired** → script prints error with re-auth instructions.

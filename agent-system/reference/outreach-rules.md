@@ -157,10 +157,41 @@ For batch mode, output all leads sequentially with `---` separators.
 
 ## CRM Update
 
-Update the CRM **only after an explicit user command** like "отправлено", "sent", "processed", "обновляй CRM". Never update proactively — even if the pitch is approved, the user may not have sent it yet.
+Update the CRM **only after an explicit user command**. Never update proactively.
 
-When the user confirms:
-- Set **Lead Status** to "Processed"
-- Set **First Contact Date** to today
-- Set **Suggested CTA** to the full email text that was sent
-- Set **Stage** to "1st letter sent"
+### Two-stage update flow
+
+#### Stage 1: Draft created (user says "создай драфты", "draft", "загрузи в Gmail")
+
+Update for **every** lead that got a draft (both approved and warning/skip):
+
+| Поле                  | Approved leads                    | Warning/Skip leads                                            |
+| --------------------- | --------------------------------- | ------------------------------------------------------------- |
+| **Stage**             | `Draft`                           | `Draft`                                                       |
+| **First Contact Date**| today's date                      | today's date                                                  |
+| **Suggested CTA**     | full email text (Subject + Body)  | — (leave empty)                                               |
+| **Notes**             | — (no change)                     | append: `OUTREACH SKIP: [reason]` or `OUTREACH HOLD: [reason]`|
+
+⚠️ **First Contact Date ставится на этапе Draft, не на этапе отправки.**
+Это дата начала работы с лидом, а не дата отправки email.
+
+#### Stage 2: Email sent (user says "отправлено", "sent", "обновляй CRM")
+
+Update only for leads whose emails were actually sent:
+
+- Set **Stage** to `1st letter sent`
+- Set **Suggested CTA** to the full email text (if not already set at Stage 1)
+- **First Contact Date** — already set at Stage 1, do NOT overwrite
+- **Lead Status** stays unchanged (changes to "Processed" only when outreach cycle is complete)
+
+### Update tool
+
+Use `crm-update-cells` command:
+
+```bash
+python3 tools/sheets_helper.py crm-update-cells /tmp/updates.json
+```
+
+JSON format: `[{"email": "a@b.com", "updates": {"Stage": "Draft", "First Contact Date": "2026-03-25"}}]`
+
+For Notes append: use `"+|text to append"` prefix — it will be appended with ` | ` separator.
