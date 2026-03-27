@@ -44,8 +44,6 @@ agent-system/agents/
 │   └── AGENT.md
 ├── searcher/
 │   └── AGENT.md
-├── qualifier/
-│   └── AGENT.md
 ├── enricher/
 │   └── AGENT.md
 ├── crm-writer/
@@ -60,8 +58,6 @@ agent-system/skills/
 │   └── SKILL.md
 ├── gmail-drafter/
 │   └── SKILL.md
-└── _archive/             ← deprecated skills (prospector, telegram-sender)
-
 agent-system/contracts/
 ├── pre-enricher-output.json
 ├── searcher-output.json
@@ -99,7 +95,6 @@ logs/
 | Pre-Enricher | `reference/icp.md`, `reference/apollo-search-patterns.md`, `reference/company-db.md` |
 | Searcher | `reference/icp.md`, `reference/apollo-search-patterns.md`, `reference/company-db.md`, `reference/common-pitfalls.md` |
 | Discoverer | `reference/icp.md`, `reference/apollo-search-patterns.md` |
-| ~~Qualifier~~ | ELIMINATED v1.5.0 — absorbed into Discoverer |
 | Enricher | `reference/icp.md`, `reference/credit-management.md`, `reference/common-pitfalls.md` |
 | CRM Writer | `reference/crm-columns.md`, `reference/company-db.md` |
 | Outreach Writer | `reference/outreach-templates.md`, `reference/outreach-rules.md`, `reference/outreach-benchmarks.md` |

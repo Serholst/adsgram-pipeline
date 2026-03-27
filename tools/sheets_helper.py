@@ -136,6 +136,16 @@ def _die(msg: str):
     sys.exit(1)
 
 
+def _col_letter(col_idx: int) -> str:
+    """Convert 0-based column index to Excel-style letter (0→A, 25→Z, 26→AA)."""
+    result = ""
+    ci = col_idx
+    while ci >= 0:
+        result = chr(ord("A") + ci % 26) + result
+        ci = ci // 26 - 1
+    return result
+
+
 def _output(data):
     print(json.dumps(data, ensure_ascii=False, indent=2))
 
@@ -242,6 +252,77 @@ def cmd_crm_row_count():
     all_values = ws.get_all_values()
     count = max(0, len(all_values) - 1)  # subtract header
     _output({"row_count": count})
+
+
+def cmd_crm_update_cells(json_file: str):
+    """Update specific cells in CRM rows matched by Email.
+
+    JSON file format:
+    [
+      {
+        "email": "a@b.com",
+        "updates": {"Stage": "Draft", "Notes": "full new value"}
+      }
+    ]
+
+    Notes field: if value starts with "+|" the remainder is APPENDED
+    to existing notes with " | " separator. Otherwise replaced entirely.
+    """
+    data = _read_json_file(json_file)
+    if not isinstance(data, list):
+        _die("JSON file must contain a list of objects")
+
+    ws = _open_crm()
+    headers = ws.row_values(1)
+    all_values = ws.get_all_values()
+
+    # Build email → row index map
+    email_col = headers.index("Email") if "Email" in headers else None
+    if email_col is None:
+        _die("No 'Email' column found in CRM")
+
+    email_to_row = {}
+    for i, row in enumerate(all_values[1:], start=2):
+        email = row[email_col].strip().lower() if email_col < len(row) else ""
+        if email:
+            email_to_row[email] = i
+
+    batch_updates = []
+    results = []
+
+    for item in data:
+        target_email = item.get("email", "").strip().lower()
+        updates = item.get("updates", {})
+        row_idx = email_to_row.get(target_email)
+
+        if row_idx is None:
+            results.append({"email": target_email, "status": "not_found"})
+            continue
+
+        for col_name, value in updates.items():
+            if col_name not in headers:
+                results.append({"email": target_email, "status": "error",
+                                "message": f"Column '{col_name}' not found"})
+                continue
+
+            col_idx = headers.index(col_name)
+
+            # Handle Notes append mode
+            if col_name == "Notes" and isinstance(value, str) and value.startswith("+|"):
+                existing = all_values[row_idx - 1][col_idx] if col_idx < len(all_values[row_idx - 1]) else ""
+                append_text = value[2:].strip()
+                value = f"{existing} | {append_text}" if existing.strip() else append_text
+
+            batch_updates.append({"range": f"{_col_letter(col_idx)}{row_idx}", "values": [[value]]})
+
+        results.append({"email": target_email, "status": "updated", "row": row_idx})
+
+    if batch_updates:
+        ws.batch_update(batch_updates, value_input_option="USER_ENTERED")
+
+    _output({"status": "ok", "updated": len([r for r in results if r["status"] == "updated"]),
+             "not_found": len([r for r in results if r["status"] == "not_found"]),
+             "results": results})
 
 
 # ---------------------------------------------------------------------------
@@ -432,7 +513,7 @@ def cmd_companydb_normalize_ownership():
         _die("No 'Ownership' column found in Company DB")
 
     col_idx = headers.index("Ownership")  # 0-indexed
-    col_letter = chr(ord("A") + col_idx)
+    col_letter = _col_letter(col_idx)
 
     all_values = ws.get_all_values()
     updates = []
@@ -523,7 +604,7 @@ def cmd_companydb_normalize_business_domain():
         _die("No 'Business Domain' column found in Company DB")
 
     col_idx = headers.index("Business Domain")
-    col_letter = chr(ord("A") + col_idx)
+    col_letter = _col_letter(col_idx)
 
     all_values = ws.get_all_values()
     updates = []
@@ -542,6 +623,65 @@ def cmd_companydb_normalize_business_domain():
     _output({"status": "ok", "changes": len(changes), "details": changes})
 
 
+def cmd_companydb_update_cells(json_file: str):
+    """Update specific cells in Company DB rows matched by Company name.
+
+    JSON file format:
+    [
+      {
+        "company": "Adsterra",
+        "updates": {"Company Domain": "adsterra.com", "Est. Revenue 2024 ($M)": "112.5"}
+      }
+    ]
+    """
+    data = _read_json_file(json_file)
+    if not isinstance(data, list):
+        _die("JSON file must contain a list of objects")
+
+    ws = _open_companydb()
+    headers = ws.row_values(1)
+    all_values = ws.get_all_values()
+
+    # Build company name → row index map (case-insensitive)
+    company_col = headers.index("Company") if "Company" in headers else None
+    if company_col is None:
+        _die("No 'Company' column found in Company DB")
+
+    name_to_row = {}
+    for i, row in enumerate(all_values[1:], start=2):
+        name = row[company_col].strip().lower() if company_col < len(row) else ""
+        if name:
+            name_to_row[name] = i
+
+    batch_updates = []
+    results = []
+
+    for item in data:
+        target = item.get("company", "").strip().lower()
+        updates = item.get("updates", {})
+        row_idx = name_to_row.get(target)
+
+        if row_idx is None:
+            results.append({"company": target, "status": "not_found"})
+            continue
+
+        for col_name, value in updates.items():
+            if col_name not in headers:
+                continue
+            col_idx = headers.index(col_name)
+            batch_updates.append({"range": f"{_col_letter(col_idx)}{row_idx}", "values": [[str(value)]]})
+
+        results.append({"company": target, "status": "updated", "row": row_idx})
+
+    if batch_updates:
+        ws.batch_update(batch_updates, value_input_option="USER_ENTERED")
+
+    _output({"status": "ok",
+             "updated": len([r for r in results if r["status"] == "updated"]),
+             "not_found": len([r for r in results if r["status"] == "not_found"]),
+             "results": results})
+
+
 # ---------------------------------------------------------------------------
 # CLI dispatcher
 # ---------------------------------------------------------------------------
@@ -553,10 +693,12 @@ COMMANDS = {
     "crm-dedup-set": (cmd_crm_dedup_set, 0),
     "crm-validate-headers": (cmd_crm_validate_headers, 0),
     "crm-row-count": (cmd_crm_row_count, 0),
+    "crm-update-cells": (cmd_crm_update_cells, 1),
     "companydb-read-all": (cmd_companydb_read_all, 0),
     "companydb-domains": (cmd_companydb_domains, 0),
     "companydb-excluded-domains": (cmd_companydb_excluded_domains, 0),
     "companydb-append-rows": (cmd_companydb_append_rows, 1),
+    "companydb-update-cells": (cmd_companydb_update_cells, 1),
     "setup-crm": (cmd_setup_crm, 1),
     "companydb-normalize-ownership": (cmd_companydb_normalize_ownership, 0),
     "companydb-normalize-business-domain": (cmd_companydb_normalize_business_domain, 0),

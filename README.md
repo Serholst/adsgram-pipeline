@@ -13,10 +13,8 @@ agent-system/             — Claude multi-agent pipeline
 
 telegram-scoring/         — Python: Telegram chat lead scoring & pitch generation
 tools/                    — Shared utilities (Google Sheets CLI)
-docs/                     — ICP documents, BD rules, outreach frameworks
 media/                    — Case study images for pitches
 logs/                     — Session logs, feedback, retrospectives
-business/ → symlink       — YAML business logic (ICP, playbooks, scoring)
 ```
 
 ## Agent Pipeline
@@ -43,7 +41,7 @@ python telegram-scoring/main.py --manager Sergey [--fresh] [--limit 20]
 
 ```bash
 cp .env.example .env
-# Fill in: ANTHROPIC_API_KEY, APOLLO_API_KEY, GOOGLE_SHEETS_SPREADSHEET_ID
+# Fill in: APOLLO_API_KEY, CRM_SHEET_ID, COMPANYDB_SHEET_ID, GOOGLE_CREDENTIALS_PATH
 ```
 
 ## Target Verticals
