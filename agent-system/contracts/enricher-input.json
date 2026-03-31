@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Enricher Agent Input",
-  "description": "Контракт: что Orchestrator передаёт Enricher Agent. Подмножество Bucket B из discoverer-output.json, одобренное пользователем на чекпойнте.",
+  "description": "Контракт: что Orchestrator передаёт Enricher Agent. Подмножество Ready-лидов с needs_enrichment=true из discoverer-output.json, одобренное пользователем на чекпойнте.",
   "type": "object",
   "required": ["enrichment_metadata", "leads"],
   "properties": {
@@ -10,7 +10,7 @@
       "required": ["timestamp", "total_leads", "approved_budget", "current_balance"],
       "properties": {
         "timestamp": { "type": "string", "format": "date-time" },
-        "total_leads": { "type": "integer", "description": "Количество лидов в Bucket B, одобренных пользователем" },
+        "total_leads": { "type": "integer", "description": "Количество Ready-лидов с needs_enrichment=true, одобренных пользователем" },
         "approved_budget": { "type": "integer", "description": "Сколько кредитов пользователь одобрил на чекпойнте" },
         "current_balance": { "type": "integer", "description": "Текущий баланс кредитов Apollo" },
         "session_query": { "type": "string", "description": "Исходный запрос пользователя (для контекста)" }

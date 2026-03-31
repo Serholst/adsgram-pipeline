@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Discoverer Agent Output",
-  "description": "Контракт: что возвращает Discoverer Agent → принимают Enricher Agent (Bucket B) и CRM Writer Agent (Bucket A + SKIP)",
+  "description": "Контракт: что возвращает Discoverer Agent → принимают Enricher Agent (needs_enrichment) и CRM Writer Agent (Ready + SKIP)",
   "type": "object",
   "required": ["discoverer_metadata", "leads"],
   "properties": {
     "discoverer_metadata": {
       "type": "object",
-      "required": ["timestamp", "total_processed", "verified", "partially_verified", "not_verified", "skipped", "new_leads_discovered", "bucket_a", "bucket_b"],
+      "required": ["timestamp", "total_processed", "verified", "partially_verified", "not_verified", "skipped", "new_leads_discovered", "ready", "needs_enrichment_count"],
       "properties": {
         "timestamp": { "type": "string", "format": "date-time" },
         "total_processed": { "type": "integer" },
@@ -16,8 +16,8 @@
         "not_verified": { "type": "integer" },
         "skipped": { "type": "integer" },
         "new_leads_discovered": { "type": "integer", "description": "Лиды, найденные через веб-поиск (web discovery для компаний с 0 Apollo результатов)" },
-        "bucket_a": { "type": "integer" },
-        "bucket_b": { "type": "integer" }
+        "ready": { "type": "integer", "description": "Все верифицированные лиды (с email и без)" },
+        "needs_enrichment_count": { "type": "integer", "description": "Подмножество ready, которым нужно платное обогащение" }
       }
     },
     "leads": {
@@ -56,7 +56,8 @@
               "sources": { "type": "array", "items": { "type": "string" }, "description": "Откуда взята информация" }
             }
           },
-          "bucket": { "type": "string", "enum": ["A", "B", "SKIP"] },
+          "bucket": { "type": "string", "enum": ["READY", "SKIP"] },
+          "needs_enrichment": { "type": "boolean", "description": "true если email не найден бесплатно и нужно платное Apollo обогащение. Только для READY-лидов с apollo_person_id" },
           "bucket_reason": { "type": "string" },
           "dedup_status": { "type": "string", "enum": ["NEW", "ALREADY_IN_CRM", "ALREADY_IN_APOLLO"] },
           "flags": { "type": "array", "items": { "type": "string" } }
@@ -74,8 +75,8 @@
         "not_verified": 1,
         "skipped": 2,
         "new_leads_discovered": 1,
-        "bucket_a": 3,
-        "bucket_b": 4
+        "ready": 7,
+        "needs_enrichment_count": 4
       },
       "leads": [
         {
@@ -103,7 +104,8 @@
             "conference_appearances": ["SBC Summit Latam 2025"],
             "sources": ["LinkedIn", "ZoomInfo", "SBC Summit agenda"]
           },
-          "bucket": "A",
+          "bucket": "READY",
+          "needs_enrichment": false,
           "bucket_reason": "Email-паттерн найден через ZoomInfo, LinkedIn верифицирован",
           "dedup_status": "NEW",
           "flags": []
@@ -133,7 +135,8 @@
             "conference_appearances": [],
             "sources": ["LinkedIn", "Twitter"]
           },
-          "bucket": "B",
+          "bucket": "READY",
+          "needs_enrichment": true,
           "bucket_reason": "Нет бесплатного email, нужен Apollo Enrich",
           "dedup_status": "NEW",
           "flags": []

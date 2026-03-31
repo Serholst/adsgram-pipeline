@@ -23,8 +23,8 @@ logs/                     — Session logs, feedback, retrospectives
 
 1. **Pre-Enricher** — Company-level web recon (parent companies, decision makers, email patterns)
 2. **Searcher** — Apollo people search armed with Pre-Enricher context
-3. **Discoverer** — Per-lead: LinkedIn + role verification + bucket assignment (A/B/Skip)
-4. **Enricher** — Apollo paid enrichment for Bucket B (1 credit/lead, checkpoint approval)
+3. **Discoverer** — Per-lead: LinkedIn + role verification + bucket assignment (Ready/Skip + needs_enrichment flag)
+4. **Enricher** — Apollo paid enrichment for leads needing enrichment (1 credit/lead, checkpoint approval)
 5. **CRM Writer** — Validate & write to Google Sheets CRM + Company DB
 6. **Outreach Writer** — Personalized cold emails with CPM/CTR benchmarks
 7. **Orchestrator** — Chains all stages, manages credits, writes retrospectives
