@@ -25,7 +25,7 @@
       "required": ["timestamp", "total_requested", "total_approved", "credits_spent", "credits_remaining", "emails_found", "emails_not_found"],
       "properties": {
         "timestamp": { "type": "string", "format": "date-time" },
-        "total_requested": { "type": "integer", "description": "Сколько лидов было в Bucket B" },
+        "total_requested": { "type": "integer", "description": "Сколько лидов с needs_enrichment=true было передано" },
         "total_approved": { "type": "integer", "description": "Сколько пользователь одобрил" },
         "credits_spent": { "type": "integer" },
         "credits_remaining": { "type": "integer" },

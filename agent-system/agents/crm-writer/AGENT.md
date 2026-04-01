@@ -1,4 +1,8 @@
-# Agent: CRM Writer
+# Agent: CRM Writer — DEPRECATED
+
+> **Заменён на Python-скрипт `tools/crm_writer.py`.**
+> Orchestrator вызывает `python3 tools/crm_writer.py` вместо этого агента.
+> Файл сохранён как справочник по бизнес-логике.
 
 ## Role
 
@@ -64,7 +68,7 @@ agent-system/contracts/crm-writer-input.json — объединённый пак
 
 Ключевые поля:
 
-- `write_metadata` — timestamp, total_leads, from_bucket_a/b, session_query
+- `write_metadata` — timestamp, total_leads, from_ready, from_skip, session_query
 - `leads[]` — массив лидов с полями для записи
 
 ### Маппинг: поля контракта → колонки Google Sheets

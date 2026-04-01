@@ -1,18 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "CRM Writer Agent Input",
-  "description": "Контракт: что Orchestrator передаёт CRM Writer Agent. Объединённый пакет из Bucket A (Discoverer) + enriched Bucket B (Enricher) + SKIP-лиды (для дедупликации).",
+  "description": "Контракт: что Orchestrator передаёт CRM Writer Agent. Объединённый пакет из Ready-лидов (Discoverer + Enricher) + SKIP-лиды (для дедупликации).",
   "type": "object",
   "required": ["write_metadata", "leads"],
   "properties": {
     "write_metadata": {
       "type": "object",
-      "required": ["timestamp", "total_leads", "from_bucket_a", "from_bucket_b", "from_skip", "session_query"],
+      "required": ["timestamp", "total_leads", "from_ready", "from_skip", "session_query"],
       "properties": {
         "timestamp": { "type": "string", "format": "date-time" },
         "total_leads": { "type": "integer" },
-        "from_bucket_a": { "type": "integer", "description": "Лиды из Discoverer Bucket A (уже с контактами)" },
-        "from_bucket_b": { "type": "integer", "description": "Лиды из Enricher (бывший Bucket B)" },
+        "from_ready": { "type": "integer", "description": "Ready-лиды из Discoverer (с email и обогащённые)" },
         "from_skip": { "type": "integer", "description": "SKIP-лиды из Discoverer (для дедупликации в CRM)" },
         "session_query": { "type": "string", "description": "Исходный запрос пользователя" }
       }
@@ -32,7 +31,7 @@
           "country": { "type": ["string", "null"] },
           "seniority": { "type": ["string", "null"] },
           "vertical": { "type": ["string", "null"], "enum": ["iGaming", "VPN", "Crypto", "Adult", null], "description": "Вертикаль компании — определяется Orchestrator из запроса пользователя" },
-          "source_bucket": { "type": "string", "enum": ["A", "B", "SKIP"], "description": "Откуда пришёл лид: A = Discoverer, B = Enricher, SKIP = Discoverer (skip-лид для дедупликации)" },
+          "source_bucket": { "type": "string", "enum": ["READY", "SKIP"], "description": "Откуда пришёл лид: READY = Discoverer (возможно обогащён Enricher), SKIP = Discoverer (skip-лид для дедупликации)" },
           "verification_status": {
             "type": "string",
             "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "NOT_VERIFIED", "ROLE_DISCREPANCY", "LEFT_COMPANY", "SKIP"]
@@ -45,7 +44,7 @@
           },
           "headline": { "type": ["string", "null"], "description": "LinkedIn headline лида из Apollo. Записывается в Notes. Напр. 'Driving Profitable UA in FX & FinTech'. null если Apollo не вернул." },
           "role_description": { "type": ["string", "null"], "description": "Описание текущей позиции из Apollo employment_history. Записывается в Notes. Напр. 'Managing $2M monthly ad spend across Meta, Google, TikTok'. null если не найдено." },
-          "email": { "type": ["string", "null"], "description": "Из Discoverer (Bucket A) или Enricher (Bucket B). Для SKIP — если есть, полезно для dedup" },
+          "email": { "type": ["string", "null"], "description": "Из Discoverer (Ready) или Enricher (Ready+enriched). Для SKIP — если есть, полезно для dedup" },
           "email_status": { "type": ["string", "null"], "enum": ["verified", "catchall", "unverified", "unavailable", null] },
           "email_source": { "type": ["string", "null"], "enum": ["discoverer_pattern", "enricher_apollo", "enricher_free_path", null], "description": "Откуда получен email. null для SKIP-лидов без email" },
           "phone": { "type": ["string", "null"] },
@@ -59,11 +58,11 @@
           "enrichment_flags": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "Для Bucket B: EMAIL_VERIFIED, EMAIL_CATCHALL и т.д. Для Bucket A и SKIP: пусто"
+            "description": "Для обогащённых лидов: EMAIL_VERIFIED, EMAIL_CATCHALL и т.д. Для остальных: пусто"
           },
           "enrichment_note": {
             "type": ["string", "null"],
-            "description": "Описание процесса обогащения из Enricher (для Bucket B). null для Bucket A и SKIP."
+            "description": "Описание процесса обогащения из Enricher (для обогащённых лидов). null для остальных."
           },
           "flags": { "type": "array", "items": { "type": "string" } },
           "company_contacts": {
@@ -99,8 +98,7 @@
       "write_metadata": {
         "timestamp": "2026-03-20T16:00:00Z",
         "total_leads": 3,
-        "from_bucket_a": 1,
-        "from_bucket_b": 1,
+        "from_ready": 2,
         "from_skip": 1,
         "session_query": "iGaming Brazil"
       },
@@ -115,7 +113,7 @@
           "country": "Brazil",
           "seniority": "Manager",
           "vertical": "iGaming",
-          "source_bucket": "A",
+          "source_bucket": "READY",
           "verification_status": "VERIFIED",
           "verification_note": "LinkedIn актуален, роль подтверждена, спикер на SBC Summit Latam 2025",
           "lead_status": "Verified",
@@ -158,7 +156,7 @@
           "country": "Brazil",
           "seniority": "Senior",
           "vertical": "iGaming",
-          "source_bucket": "B",
+          "source_bucket": "READY",
           "verification_status": "PARTIALLY_VERIFIED",
           "verification_note": "LinkedIn найден, роль совпадает, но email не найден бесплатно",
           "lead_status": "Partially verified",
