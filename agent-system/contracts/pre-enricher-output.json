@@ -78,6 +78,14 @@
             "items": { "type": "string" },
             "description": "Конференции, спонсорства, найм, запуски — для персонализации outreach"
           },
+          "selection_rationale": {
+            "type": ["string", "null"],
+            "description": "Обоснование выбора компании из demand-side discovery: что делает, GEO, услуги, почему подходит. Напр: 'iGaming operator, Brazil. Live casino + sports betting. Found via Meta Ad Library (active ads in BR) + App Store (localized PT-BR).'"
+          },
+          "marketing_intel": {
+            "type": ["string", "null"],
+            "description": "Маркетинговая разведка: активные кампании (Meta/TikTok/Google), каналы, % paid трафика, GEO трафика, affiliate, найм UA. Напр: 'Active campaigns: Meta Ads (BR, MX). Paid traffic: 25%. Traffic GEO: Brazil 60%, Mexico 15%. Hiring: UA Manager São Paulo.'"
+          },
           "enrichment_quality": {
             "type": "string",
             "enum": ["high", "medium", "low", "failed"],
@@ -166,6 +174,8 @@
           },
           "email_pattern": null,
           "industry_signals": ["Acquired Gamma Entertainment Jan 2025", "1300+ employees"],
+          "selection_rationale": "Adult premium platform, global. Live streaming + cam platform. Found via buyer query 'best cam sites 2026' + SimilarWeb (45% paid traffic). Consumer product with global presence.",
+          "marketing_intel": "Active campaigns: Meta Ads (EU, LATAM), Google Ads (global). Paid traffic: 45% (SimilarWeb). Traffic GEO: US 25%, DE 12%, BR 10%. Affiliate program: yes (jasmin.com/affiliates). Hiring: Performance Marketing Manager, Luxembourg.",
           "enrichment_quality": "high",
           "enrichment_failed": false,
           "failure_reason": null,

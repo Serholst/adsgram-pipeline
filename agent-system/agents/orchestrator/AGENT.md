@@ -60,19 +60,22 @@ outreach, автономно координируя агентов. Пользо
 
 ## Вход
 
-Запрос пользователя в свободной форме. Типичные варианты:
+Запрос пользователя в формате **vertical + GEO**:
 
-- «autopipeline iGaming Brazil» → вертикаль + GEO
-- «найди лидов для betano.com, superbet.com» → список доменов
-- «найди ещё лидов» → расширение предыдущего поиска
+- «autopipeline iGaming Brazil»
+- «pipeline VPN Turkey»
+- «найди лидов iGaming LATAM»
+
+Других форматов нет. Demand-Side Discovery (Этап 0 Pre-Enricher) обязателен для каждого запуска.
 
 ### Валидация запроса
 
 Перед запуском проверь:
 
-- GEO в ICP? (LATAM, Asia, Europe, Africa)
-- Если GEO вне ICP → уточни: «X не в нашем ICP. Продолжить?»
-- Если запрос слишком расплывчатый → конкретизируй:
+- Указана вертикаль? (iGaming / VPN / Crypto / Adult)
+- Указан GEO? (LATAM, Asia, Europe, Africa)
+- GEO в ICP? Если нет → уточни: «X не в нашем ICP. Продолжить?»
+- Если нет вертикали или GEO → конкретизируй:
   «Какой регион? Какая вертикаль?»
 
 ## Механизм передачи данных
@@ -102,70 +105,23 @@ outreach, автономно координируя агентов. Пользо
 
 Перед вызовом CRM Writer ты собираешь пакет по
 agent-system/contracts/crm-writer-input.json из трёх источников:
-Discoverer (Bucket A + SKIP), Enricher (Bucket B), Pre-Enricher (company-level).
+Discoverer (Ready + SKIP), Enricher (обогащённые Ready), Pre-Enricher (company-level).
 
-**Для КАЖДОГО лида** (Bucket A, B и SKIP):
+**Для КАЖДОГО лида** (Ready и SKIP):
 
-- `vertical` ← определи из запроса пользователя (iGaming / VPN / Crypto / Adult).
-  Если запрос по доменам без указания вертикали — определи по company_domain
-  и контексту от Pre-Enricher.
+- `vertical` ← из запроса пользователя (iGaming / VPN / Crypto / Adult).
+  Всегда известна, т.к. вход — vertical+GEO.
 - `company_contacts` ← из сохранённых Pre-Enricher данных по company_domain.
   Если Pre-Enricher не обогащал эту компанию → null.
 - `industry_signals` ← из сохранённых Pre-Enricher данных по company_domain.
   Если Pre-Enricher не обогащал → пустой массив [].
 
-**Bucket A** (из discoverer-output.json, где `bucket: "A"`):
+Сборка теперь выполняется скриптом `assemble_crm_package.py`.
+Он автоматически обрабатывает Ready-лидов (с обогащением и без)
+и SKIP-лидов, маппит поля и мержит данные из всех источников.
 
-- Копируй поля лида как есть
-- `source_bucket` ← `"A"`
-- `email` ← `contacts_found.email_pattern`
-- `email_status` ← `"unverified"` (email из web-pattern, не проверен через Apollo)
-- `email_source` ← `"discoverer_pattern"`
-- `lead_status` ← маппинг verification_status (см. таблицу ниже)
-- `headline` ← passthrough из Discoverer (LinkedIn headline) → CRM: Notes
-- `role_description` ← passthrough из Discoverer (описание позиции) → CRM: Notes
-- `linkedin_url` ← `contacts_found.linkedin_url` → CRM: Socials
-- `twitter` ← `contacts_found.twitter` → CRM: Socials
-- `instagram` ← `contacts_found.instagram` → CRM: Socials
-- `telegram_handle` ← `contacts_found.telegram_handle` → CRM: Socials
-- `whatsapp` ← `contacts_found.whatsapp` → CRM: Alt Contacts
-- `phone` ← `contacts_found.phone` (если есть) → CRM: Alt Contacts
-- `conference_appearances` ← `contacts_found.conference_appearances` → CRM: Sources & Signals
-- `contact_sources` ← `contacts_found.sources` → CRM: Sources & Signals
-
-**Bucket B** (из enricher-output.json):
-
-- Копируй поля лида как есть
-- `source_bucket` ← `"B"`
-- `email`, `email_status`, `phone` ← из Enricher
-- `email_source` ← `"enricher_apollo"` или `"enricher_free_path"`
-  (по enrichment_flags: FREE_PATH_USED → free_path)
-- `enrichment_note` ← из Enricher (описание процесса обогащения)
-- `lead_status` ← маппинг verification_status (Enricher прокидывает
-  его из discoverer-output — используй прокинутое значение)
-- `headline` ← passthrough из Enricher (LinkedIn headline) → CRM: Notes
-- `role_description` ← из Enricher (может быть обогащено из Apollo employment_history) → CRM: Notes
-- `linkedin_url` ← из Enricher или `contacts_found` → CRM: Socials
-- `twitter` ← из `contacts_found` → CRM: Socials
-- `instagram` ← из `contacts_found` → CRM: Socials
-- `telegram_handle` ← из `contacts_found` → CRM: Socials
-- `whatsapp` ← из `contacts_found` → CRM: Alt Contacts
-- `conference_appearances`, `contact_sources` ← из `contacts_found` → CRM: Sources & Signals
-
-**SKIP-лиды** (из discoverer-output.json, где `bucket: "SKIP"`):
-
-- Копируй поля лида как есть
-- `source_bucket` ← `"SKIP"`
-- `lead_status` ← `"Skip"`
-- `email` ← `contacts_found.email_pattern` (если есть — полезно для dedup)
-- `email_source` ← `"discoverer_pattern"` (если email есть) или null
-- `email_status` ← `"unverified"` (если email есть) или null
-- `headline` ← passthrough из Discoverer (если есть)
-- `role_description` ← passthrough из Discoverer (если есть)
-- `linkedin_url`, `twitter`, `instagram`, `telegram_handle`, `whatsapp`,
-  `phone` ← из `contacts_found` (если есть — полезно для будущих сессий)
-- `conference_appearances`, `contact_sources` ← из `contacts_found`
-- `verification_note` ← ОБЯЗАТЕЛЬНО содержит причину skip
+Подробности маппинга — в `assemble_crm_package.py` и контракте
+`crm-writer-input.json`.
 
 ### Маппинг verification_status → lead_status
 
@@ -197,7 +153,7 @@ COMPANY DB WRITE 1 ← записать все approved компании
     │                 (защита от потери при crash)
     │
     ▼
-PRE-ENRICHER (Этап A) ← список компаний (домены или вертикаль+GEO)
+PRE-ENRICHER ← вертикаль+GEO (Этап 0: demand-side discovery → Этап A: обогащение)
     │
     ▼ pre-enricher-output.json
     │  (company intelligence: parent companies, decision makers,
@@ -218,7 +174,7 @@ DISCOVERER ← searcher-output.json от тебя
     │  Для каждого лида за ОДИН поиск:
     │  1) найти контакты (LinkedIn URL, email pattern, social)
     │  2) верифицировать роль (ещё работает в компании?)
-    │  3) назначить бакет (A/B/Skip)
+    │  3) назначить бакет (Ready/Skip + needs_enrichment)
     │  + для компаний с 0 результатов: найти людей через веб
     │
     ▼ discoverer-output.json
@@ -227,7 +183,7 @@ DISCOVERER ← searcher-output.json от тебя
     ├─ 80%+ Skip? → запиши feedback для Searcher в лог,
     │               предупреди пользователя на чекпойнте
     │
-    ├─ Bucket A (есть контакты) ──────────┐
+    ├─ Ready (есть контакты) ─────────────┐
     │                                      ▼
     ├─ Bucket B (нужен enrich) ──→ ══ CHECKPOINT 1 ══
     │                              Покажи Bucket B + стоимость
@@ -368,7 +324,9 @@ python3 tools/sheets_helper.py companydb-update-cells /tmp/companies_post.json
 - Из Pre-Enricher `company_contacts`: `general_email`, `press_email`, `partnerships_email`, `twitter`, `instagram`, `telegram`, `tiktok`
 - Пустые/null поля НЕ включай в JSON
 
-Также обнови "Est. Revenue 2024 ($M)" (column F) если текущее значение пустое и Enricher вернул `revenue_printed`.
+Также обнови:
+- "Est. Revenue 2024 ($M)" (column F) если текущее значение пустое и Enricher вернул `revenue_printed`
+- "Marketing Intel" (column M) — дополни данными из Apollo enrichment если есть новые сигналы (например, `estimated_num_employees` или revenue подтверждает масштаб acquisition-бюджета)
 
 **Это обязательное требование.** Каждая компания, отправленная в Apollo people search, ДОЛЖНА получить обновлённые Search Results и Company Contacts.
 

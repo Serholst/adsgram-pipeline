@@ -20,6 +20,8 @@ This file serves two purposes and MUST be read at the start of every prospecting
 - I: Prospected ← **non-empty = excluded from search** ("Processed", "Trash", "Yes YYYY-MM-DD", etc.)
 - J: Search Results ← **if contains "excluded" → company excluded from search**
 - K: Company Contacts ← JSON с контактами компании (phone, emails, socials, address, employees, linkedin). Пустые поля не включаются.
+- L: Selection Rationale ← Обоснование выбора компании из demand-side discovery. Что делает, в каком GEO, какие услуги, почему подходит. Заполняется на WRITE 1.
+- M: Marketing Intel ← Маркетинговая разведка: активные кампании (Meta/TikTok/Google), каналы, % paid трафика, GEO трафика, affiliate-программа, найм UA-ролей. Заполняется на WRITE 1, может обновляться на WRITE 2.
 
 ### How to load exclusion domains
 
@@ -56,7 +58,9 @@ python3 tools/sheets_helper.py companydb-append-rows /tmp/companies_pre.json
 
 - Set column I to "Yes (YYYY-MM-DD)"
 - Set column J to "Searching..." (placeholder)
-- **Why before search?** If the pipeline crashes mid-search, these companies are already marked as prospected. This prevents re-searching them in the next session.
+- Set column L (Selection Rationale) — обоснование из Stage 0: что делает компания, в каком GEO, какие услуги, почему подходит. Пример: "iGaming operator, Brazil. Live casino + sports betting. Found via Meta Ad Library (active ads in BR) + App Store (localized PT-BR). Consumer product with confirmed GEO presence."
+- Set column M (Marketing Intel) — маркетинговая разведка из Stage 0. Пример: "Active campaigns: Meta Ads (BR, MX), TikTok (BR). Paid traffic: 25% (SimilarWeb). Traffic GEO: Brazil 60%, Mexico 15%. Hiring: UA Manager São Paulo. Affiliate program: yes."
+- **Why before search?** If the pipeline crashes mid-search, these companies are already marked as prospected with full discovery context. This prevents re-searching them in the next session.
 
 #### Write 2: AFTER enrichment (final update)
 
@@ -143,10 +147,7 @@ Returns JSON with `emails`, `name_company` (format: `"name|||company"`), and `to
 
 ### Step 1c: Build candidate list
 
-Where the candidates come from depends on the request type:
-- **User provides specific domains** → use those, but check each one against `exclusion_domains` (see Step 1d)
-- **Vertical/GEO combination** → use Apollo Organization Search (FREE) to discover companies, then filter
-- **Vague request ("найди ещё лидов")** → use Apollo Organization Search with relevant vertical keywords to discover NEW companies not in the exclusion set.
+Input is always **vertical + GEO** (e.g. "iGaming Brazil"). Pre-Enricher runs demand-side discovery (Этап 0) to find companies with active acquisition budgets in the target GEO, then filters through exclusion gates.
 
 ### Step 1d: Validation gate
 
