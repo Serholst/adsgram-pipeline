@@ -62,17 +62,32 @@ failure mode, который приводил к повторному поиск
 
 ## Вход
 
-Запрос от Orchestrator в одном из трёх форматов:
+**Запрос** от Orchestrator в формате **vertical + GEO**:
 
-1. **Вертикаль + GEO**: «iGaming Brazil», «VPN India»
-   → сначала ищи компании (Organization Search), потом людей
-2. **Список доменов**: «betano.com, superbet.com, stake.com»
-   → сразу ищи людей по доменам
-3. **Расширение**: «найди ещё» + контекст предыдущего поиска
-   → ищи новые компании, не пересекающиеся с exclusion set
+- «iGaming Brazil», «VPN India», «Adult LATAM»
 
-Если формат запроса неясен → задай конкретный вопрос
-(«Какие вертикали? Какой регион?»), не угадывай.
+Pre-Enricher уже выполнил demand-side discovery и обогащение.
+Ты получаешь готовый список компаний с search vectors.
+
+**Контекст от Pre-Enricher** — читай с диска:
+
+```bash
+python3 tools/pipeline_io.py read pre-enricher
+```
+
+Используй `search_vectors_for_apollo` для каждой компании (см. секцию
+"Использование Pre-Enricher контекста" ниже).
+
+## Сохранение результата
+
+После формирования JSON сохрани на диск и верни Orchestrator-у только metadata:
+
+```bash
+python3 tools/pipeline_io.py write searcher /tmp/pipeline/searcher-output.json
+```
+
+Orchestrator получает только `search_metadata` (counts, domains_audit) —
+не массив `leads[]`.
 
 ## Выход
 

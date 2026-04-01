@@ -1,7 +1,7 @@
 ---
 name: adsgram-autopipeline
 version: 3.0.0
-description: "Automated AdsGram prospecting pipeline: takes a vertical+GEO or domain list, delegates to the Orchestrator agent which runs the full 7-agent chain (Pre-Enricher → Searcher → Discoverer → Enricher → CRM Writer → Outreach Writer) with two checkpoints. Trigger when user says: 'автопоиск', 'autopipeline', 'запусти пайплайн', 'автопроспектинг', 'pipeline iGaming Brazil', 'найди лидов автоматом', or any prospecting request where the user wants minimal interaction. Also trigger on standard prospecting phrases: 'найди лидов', 'поиск контактов', 'обогатить лиды', 'prospecting', 'find leads' — the pipeline handles the full cycle automatically."
+description: "Automated AdsGram prospecting pipeline: takes a vertical+GEO, runs demand-side discovery to find companies with active acquisition budgets, then delegates to the Orchestrator agent which runs the full 7-agent chain (Pre-Enricher → Searcher → Discoverer → Enricher → CRM Writer → Outreach Writer) with two checkpoints. Trigger when user says: 'автопоиск', 'autopipeline', 'запусти пайплайн', 'автопроспектинг', 'pipeline iGaming Brazil', 'найди лидов автоматом', or any prospecting request. Also trigger on: 'найди лидов', 'поиск контактов', 'prospecting', 'find leads'. Input MUST be vertical+GEO format (e.g. 'iGaming Brazil', 'VPN Turkey'). Domain lists are not supported."
 ---
 
 # AdsGram Auto-Pipeline
@@ -23,7 +23,10 @@ The Orchestrator will pause at two checkpoints:
 ```
 
 The Orchestrator internally runs:
-Pre-Enricher → Searcher → Discoverer → [CP1] → Enricher → CRM Writer → Outreach Writer → [CP2]
+Pre-Enricher → Searcher → Discoverer → [CP1] → Enricher → CRM Writer (Python script) → Outreach Writer → [CP2]
+
+Data flows through files in `/tmp/pipeline/`, not through Orchestrator context.
+CRM Writer is a Python script (`tools/crm_writer.py`), not a Claude agent.
 
 Wait for the Orchestrator to complete. It will return a SUMMARY with funnel metrics.
 
