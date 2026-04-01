@@ -181,6 +181,47 @@ def cmd_crm_read_all():
     _output(records)
 
 
+OUTREACH_READY_STATUSES = {"Verified", "Partially verified"}
+OUTREACH_COLUMNS = [
+    "Company", "Vertical", "Country", "Name", "Title",
+    "Email", "Email Status", "Socials", "Alt Contacts",
+    "Sources & Signals", "Lead Status", "Notes",
+]
+EMAIL_PLACEHOLDER = "(Apollo has_email)"
+
+
+def cmd_crm_read_outreach_ready():
+    """Read CRM rows ready for outreach: filtered and trimmed to relevant columns.
+
+    Filters (all must be true):
+    - Lead Status in ("Verified", "Partially verified")
+    - Email non-empty and not a placeholder
+    - Stage is empty
+    - First Contact Date is empty
+    """
+    ws = _open_crm()
+    records = ws.get_all_records(numericise_ignore=["all"])
+
+    ready = []
+    for r in records:
+        status = str(r.get("Lead Status", "")).strip()
+        email = str(r.get("Email", "")).strip()
+        stage = str(r.get("Stage", "")).strip()
+        fcd = str(r.get("First Contact Date", "")).strip()
+
+        if status not in OUTREACH_READY_STATUSES:
+            continue
+        if not email or email == EMAIL_PLACEHOLDER:
+            continue
+        if stage or fcd:
+            continue
+
+        trimmed = {col: r.get(col, "") for col in OUTREACH_COLUMNS}
+        ready.append(trimmed)
+
+    _output({"total_crm_rows": len(records), "outreach_ready": len(ready), "leads": ready})
+
+
 def cmd_crm_read_headers():
     """Read CRM header row."""
     ws = _open_crm()
@@ -688,6 +729,7 @@ def cmd_companydb_update_cells(json_file: str):
 
 COMMANDS = {
     "crm-read-all": (cmd_crm_read_all, 0),
+    "crm-read-outreach-ready": (cmd_crm_read_outreach_ready, 0),
     "crm-read-headers": (cmd_crm_read_headers, 0),
     "crm-append-rows": (cmd_crm_append_rows, 1),
     "crm-dedup-set": (cmd_crm_dedup_set, 0),
