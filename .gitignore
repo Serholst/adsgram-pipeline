@@ -43,6 +43,13 @@ logs/feedback/*.md
 logs/retrospectives/*.md
 !logs/**/_template.*
 
+# === State & enrichment data ===
+outreach-sync/state.json
+*_pre_enrichment.json
+
+# === Pipeline runtime data ===
+data/pipeline/*.json
+
 # === Temp files ===
 zi*
 *.tmp

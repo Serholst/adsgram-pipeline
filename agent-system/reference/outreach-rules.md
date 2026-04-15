@@ -119,6 +119,18 @@ For batch mode, output all leads sequentially with `---` separators.
 
 ---
 
+### GEO Abbreviation Glossary
+
+| Abbreviation | Full Name | Common Misspellings |
+|---|---|---|
+| CIS | Commonwealth of Independent States | CSI |
+| LATAM | Latin America | LATAN |
+| DACH | Deutschland, Austria, Confoederatio Helvetica | DAHC |
+| MENA | Middle East and North Africa | — |
+| SEA | Southeast Asia | — |
+
+---
+
 ## Pre-Send Checklist
 
 ### Matrix cell checklist (all cells):

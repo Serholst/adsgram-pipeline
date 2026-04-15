@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────
+# AdsGram Pipeline — consolidated dependencies
+# Install: pip install -r requirements.txt
+# ─────────────────────────────────────────────────────────
+
+# === Core pipeline tools (tools/) ===
+gspread>=6.0.0
+google-auth>=2.0.0
+openpyxl>=3.1.0
+python-telegram-bot>=21.0
+
+# === Gmail drafter (agent-system/skills/gmail-drafter/) ===
+google-api-python-client>=2.100.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.2.0
+
+# === Telegram scoring (telegram-scoring/) ===
+openai==1.*
+python-dotenv==1.*
+pyyaml==6.*
+jinja2==3.*
+tenacity==9.*
+python-docx==1.*

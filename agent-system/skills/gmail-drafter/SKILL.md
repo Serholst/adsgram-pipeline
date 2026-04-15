@@ -6,6 +6,8 @@ description: "Creates Gmail draft emails from approved outreach pitches. Does NO
 
 # Gmail Draft Creator
 
+> ⚠️ ЕДИНСТВЕННЫЙ инструмент для Gmail. НЕ использовать MCP Gmail tool (`gmail_create_draft`) — он подключён к другому аккаунту.
+
 ## What It Does
 
 Takes approved pitches from Outreach Writer and creates Gmail drafts.

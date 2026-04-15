@@ -1,0 +1,112 @@
+@startuml
+!theme plain
+skinparam sequenceArrowThickness 1.5
+skinparam participantPadding 10
+
+actor "Оператор" as User
+participant "Autopipeline" as AP
+participant "Orchestrator" as O
+participant "Pre-Enricher" as PE
+participant "Searcher" as S
+participant "Discoverer" as D
+participant "Enricher" as E
+participant "CRM Writer\n(Python)" as CRM
+participant "Outreach Writer" as OW
+participant "Gmail Drafter\n(Python)" as GM
+database "Google Sheets" as DB
+
+User -> AP : vertical + GEO
+AP -> O : делегирует полный цикл
+
+note over O : Очистка data/pipeline/
+
+== Exclusion & Company DB ==
+
+O -> DB : загрузить exclusion list\n(домены, emails, пары имя+компания)
+DB --> O : excluded_domains, crm_emails, crm_companies
+O -> DB : записать компании-кандидаты\n(Prospected: Yes)
+
+== Разведка по компаниям ==
+
+O -> PE : vertical + GEO + approved companies
+note over PE
+  Web-разведка: домены, email-паттерны,
+  контакты компаний, decision makers
+end note
+PE --> O : metadata (counts, has_parent_companies, has_person_names)
+
+== Поиск контактов ==
+
+O -> S : контекст от Pre-Enricher\n(parent companies, имена)
+note over S
+  Apollo People Search
+  5-рецептная воронка с fallback
+end note
+S --> O : metadata (total_leads, domains_audit)
+
+alt 0 результатов + есть рекомендация
+  O -> S : retry с расширенными параметрами (max 2)
+  S --> O : metadata
+end
+
+== Верификация ==
+
+O -> D : (читает searcher-output с диска)
+note over D
+  LinkedIn верификация,
+  bucket assignment (Ready / Skip)
+end note
+D --> O : metadata (ready, needs_enrichment, skipped)
+
+== Обогащение (платное) ==
+
+alt needs_enrichment > 0
+  O -> User : **CHECKPOINT 1**\nN лидов × 1 кредит = N кредитов. Одобрить?
+  User --> O : да / первые N / нет
+
+  alt одобрено
+    O -> E : (читает enricher-input с диска)
+    note over E
+      Apollo Enrichment
+      (платно, 1 кредит/лид)
+    end note
+    E --> O : metadata (credits_spent, emails_found)
+  end
+end
+
+== Запись в CRM ==
+
+O -> CRM : assemble_crm_package → crm_writer.py
+note over CRM
+  Валидация, дедупликация,
+  запись в Google Sheets
+end note
+CRM --> O : status, rows_written
+
+O -> DB : обновить Company DB\n(контакты, revenue, Search Results)
+
+== Outreach ==
+
+O -> OW : (читает CRM)
+note over OW
+  Pattern Matrix (A/B/C/D),
+  персонализированные email-питчи
+end note
+OW --> O : питчи для каждого лида
+
+O -> User : **CHECKPOINT 2**: показать питчи. Одобрить?
+User --> O : одобрить / кроме X / отклонить
+
+O -> User : **CHECKPOINT 2.5**: sample draft. OK?
+User --> O : ок
+
+== Gmail Drafts ==
+
+O -> GM : batch JSON → create_drafts.py
+note over GM : Создание черновиков в Gmail
+GM --> O : drafts_created, drafts_failed
+
+O -> DB : обновить CRM\n(Stage=Draft, First Contact Date)
+O -> User : **SUMMARY**\n(воронка, кредиты, рекомендации)
+
+@enduml

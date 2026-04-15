@@ -57,6 +57,15 @@ Archived skills (not active): `agent-system/skills/_archive/`
 | Daily credit limit (Apollo API) | 500 |
 | Rate limit (Apollo API) | 50 RPM |
 
+## Gmail Drafts
+
+**ЕДИНСТВЕННЫЙ способ** создания черновиков:
+```bash
+python agent-system/skills/gmail-drafter/create_drafts.py --batch-file <json>
+```
+
+НЕ использовать MCP Gmail tool (`gmail_create_draft`) — он подключён к другому аккаунту.
+
 ## Язык
 
 - Общение с пользователем: **русский**

@@ -3,8 +3,8 @@
 Merge Discoverer + Enricher + Pre-Enricher outputs into crm-writer-input.json.
 
 Replaces the Orchestrator's 80-line "Сборка пакета для CRM Writer" section.
-Reads from /tmp/pipeline/ files, applies field mapping per contracts,
-writes /tmp/pipeline/crm-writer-input.json.
+Reads from data/pipeline/ files, applies field mapping per contracts,
+writes data/pipeline/crm-writer-input.json.
 
 Usage:
     python3 tools/assemble_crm_package.py \
@@ -12,12 +12,12 @@ Usage:
         --session-query "iGaming Brazil"
 
 Input:
-    /tmp/pipeline/discoverer-output.json  (required)
-    /tmp/pipeline/enricher-output.json    (optional — absent if no leads needed enrichment)
-    /tmp/pipeline/pre-enricher-output.json (required)
+    data/pipeline/discoverer-output.json  (required)
+    data/pipeline/enricher-output.json    (optional — absent if no leads needed enrichment)
+    data/pipeline/pre-enricher-output.json (required)
 
 Output:
-    /tmp/pipeline/crm-writer-input.json
+    data/pipeline/crm-writer-input.json
     stdout: JSON summary
 """
 
@@ -27,7 +27,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-PIPELINE_DIR = Path("/tmp/pipeline")
+from pipeline_io import PIPELINE_DIR
 DISCOVERER_PATH = PIPELINE_DIR / "discoverer-output.json"
 ENRICHER_PATH = PIPELINE_DIR / "enricher-output.json"
 PRE_ENRICHER_PATH = PIPELINE_DIR / "pre-enricher-output.json"

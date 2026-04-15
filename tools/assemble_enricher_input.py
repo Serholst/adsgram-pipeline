@@ -11,8 +11,8 @@ Usage:
         --current-balance 45 \
         --session-query "iGaming Brazil"
 
-Input:  /tmp/pipeline/discoverer-output.json
-Output: /tmp/pipeline/enricher-input.json
+Input:  data/pipeline/discoverer-output.json
+Output: data/pipeline/enricher-input.json
 Stdout: JSON summary
 """
 
@@ -22,7 +22,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-PIPELINE_DIR = Path("/tmp/pipeline")
+from pipeline_io import PIPELINE_DIR
 DISCOVERER_OUTPUT = PIPELINE_DIR / "discoverer-output.json"
 ENRICHER_INPUT = PIPELINE_DIR / "enricher-input.json"
 

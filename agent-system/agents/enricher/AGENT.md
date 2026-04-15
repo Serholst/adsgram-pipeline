@@ -67,7 +67,7 @@
 python3 tools/pipeline_io.py read enricher
 ```
 
-Если файла нет, читай `/tmp/pipeline/enricher-input.json` напрямую.
+Если файла нет, читай `data/pipeline/enricher-input.json` напрямую.
 
 Это Ready-лиды с needs_enrichment=true из discoverer-output — подмножество лидов,
 отфильтрованное скриптом `assemble_enricher_input.py`. Только лиды с
@@ -91,7 +91,7 @@ python3 tools/pipeline_io.py read enricher
 После формирования JSON сохрани на диск и верни Orchestrator-у только metadata:
 
 ```bash
-python3 tools/pipeline_io.py write enricher /tmp/pipeline/enricher-output.json
+python3 tools/pipeline_io.py write enricher data/pipeline/enricher-output.json
 ```
 
 Orchestrator получает только `enricher_metadata` (credits_spent, emails_found,

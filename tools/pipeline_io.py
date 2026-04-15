@@ -2,11 +2,11 @@
 """
 File-based data handoff between pipeline agents.
 
-Each agent writes its full output to /tmp/pipeline/<agent>-output.json
+Each agent writes its full output to data/pipeline/<agent>-output.json
 and returns only lightweight metadata to the Orchestrator.
 
 Usage from agents (via Bash tool):
-    python3 tools/pipeline_io.py write <agent> /tmp/some_file.json
+    python3 tools/pipeline_io.py write <agent> <json_file>
     python3 tools/pipeline_io.py read <agent>
     python3 tools/pipeline_io.py status <agent>
     python3 tools/pipeline_io.py clean
@@ -18,7 +18,10 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-PIPELINE_DIR = Path("/tmp/pipeline")
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_PROJECT_DIR = _SCRIPT_DIR.parent
+PIPELINE_DIR = Path(os.environ.get("PIPELINE_DATA_DIR", str(_PROJECT_DIR / "data" / "pipeline")))
+STATE_FILE = PIPELINE_DIR / "pipeline-state.json"
 
 KNOWN_AGENTS = {
     "pre-enricher",
@@ -27,6 +30,24 @@ KNOWN_AGENTS = {
     "enricher",
     "crm-writer",
 }
+
+# Ordered pipeline steps for checkpoint/resume
+PIPELINE_STEPS = [
+    "exclusion",
+    "companydb-write-1",
+    "pre-enricher",
+    "searcher",
+    "discoverer",
+    "checkpoint-1",
+    "enricher",
+    "assemble-crm",
+    "crm-writer",
+    "companydb-write-2",
+    "outreach-writer",
+    "gmail-drafter",
+    "crm-update-drafts",
+    "summary",
+]
 
 
 def ensure_dir():
@@ -102,8 +123,12 @@ def cmd_status(agent: str):
     _output(data)
 
 
-def cmd_clean():
-    """Remove all pipeline files. Call at the start of a new session."""
+def cmd_clean(keep_state: bool = False):
+    """Remove all pipeline files. Call at the start of a new session.
+
+    Args:
+        keep_state: If True, preserve pipeline-state.json (for retry/resume).
+    """
     if not PIPELINE_DIR.exists():
         _output({"status": "ok", "removed": 0})
         return
@@ -111,6 +136,8 @@ def cmd_clean():
     removed = 0
     for f in PIPELINE_DIR.iterdir():
         if f.is_file() and f.suffix == ".json":
+            if keep_state and f.name == "pipeline-state.json":
+                continue
             f.unlink()
             removed += 1
     _output({"status": "ok", "removed": removed})
@@ -128,6 +155,86 @@ def cmd_list():
         size = f.stat().st_size
         agents.append({"agent": name, "file": str(f), "size_bytes": size})
     _output({"agents": agents})
+
+
+# ---------------------------------------------------------------------------
+# State management — checkpoint / resume for autonomous mode
+# ---------------------------------------------------------------------------
+
+def _read_state() -> dict:
+    if STATE_FILE.exists():
+        with open(STATE_FILE) as f:
+            return json.load(f)
+    return {}
+
+
+def _write_state(state: dict):
+    ensure_dir()
+    state["updated_at"] = datetime.now(timezone.utc).isoformat()
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+
+
+def cmd_checkpoint(step: str):
+    """Record that a pipeline step completed successfully."""
+    if step not in PIPELINE_STEPS:
+        _die(f"Unknown step: {step}. Valid steps: {', '.join(PIPELINE_STEPS)}")
+
+    state = _read_state()
+    completed = state.get("steps_completed", [])
+    if step not in completed:
+        completed.append(step)
+    state["steps_completed"] = completed
+    state["last_completed_step"] = step
+    if "started_at" not in state:
+        state["started_at"] = datetime.now(timezone.utc).isoformat()
+    _write_state(state)
+
+    _output({"status": "ok", "step": step, "total_completed": len(completed)})
+
+
+def cmd_resume():
+    """Determine which step to resume from, or 'start' if no state."""
+    state = _read_state()
+    if not state or "last_completed_step" not in state:
+        _output({"next_step": "start"})
+        return
+
+    last = state["last_completed_step"]
+    try:
+        idx = PIPELINE_STEPS.index(last)
+    except ValueError:
+        _output({"next_step": "start"})
+        return
+
+    if idx + 1 >= len(PIPELINE_STEPS):
+        _output({"next_step": "done", "query": state.get("query", {}),
+                 "completed": state.get("steps_completed", [])})
+        return
+
+    next_step = PIPELINE_STEPS[idx + 1]
+    _output({
+        "next_step": next_step,
+        "query": state.get("query", {}),
+        "completed": state.get("steps_completed", []),
+        "last_completed": last,
+    })
+
+
+def cmd_set_query(json_str: str):
+    """Save pipeline query parameters (vertical, geo) for resume."""
+    try:
+        query = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        _die(f"Invalid JSON: {e}")
+
+    state = _read_state()
+    state["query"] = query
+    if "started_at" not in state:
+        state["started_at"] = datetime.now(timezone.utc).isoformat()
+    _write_state(state)
+
+    _output({"status": "ok", "query": query})
 
 
 # ---------------------------------------------------------------------------
@@ -201,11 +308,14 @@ def _extract_status(agent: str, data: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 COMMANDS = {
-    "write": 2,   # agent, json_file
-    "read": 1,    # agent
-    "status": 1,  # agent
+    "write": 2,       # agent, json_file
+    "read": 1,        # agent
+    "status": 1,      # agent
     "clean": 0,
     "list": 0,
+    "checkpoint": 1,  # step_name
+    "resume": 0,
+    "set-query": 1,   # json_string
 }
 
 
@@ -216,8 +326,11 @@ def main():
         print("  write <agent> <json_file>  — save agent output, return status")
         print("  read <agent>               — read full agent output")
         print("  status <agent>             — read lightweight status")
-        print("  clean                      — remove all pipeline files")
+        print("  clean [--keep-state]       — remove pipeline files (optionally keep state)")
         print("  list                       — list all agent outputs on disk")
+        print("  checkpoint <step>          — record completed step")
+        print("  resume                     — get next step to execute")
+        print("  set-query <json>           — save query params for resume")
         sys.exit(0)
 
     cmd = sys.argv[1]
@@ -226,19 +339,27 @@ def main():
 
     nargs = COMMANDS[cmd]
     args = sys.argv[2:]
-    if len(args) < nargs:
-        _die(f"Command '{cmd}' requires {nargs} argument(s), got {len(args)}")
 
-    if cmd == "write":
+    # Special handling for clean --keep-state
+    if cmd == "clean":
+        keep_state = "--keep-state" in args
+        cmd_clean(keep_state=keep_state)
+    elif len(args) < nargs:
+        _die(f"Command '{cmd}' requires {nargs} argument(s), got {len(args)}")
+    elif cmd == "write":
         cmd_write(args[0], args[1])
     elif cmd == "read":
         cmd_read(args[0])
     elif cmd == "status":
         cmd_status(args[0])
-    elif cmd == "clean":
-        cmd_clean()
     elif cmd == "list":
         cmd_list()
+    elif cmd == "checkpoint":
+        cmd_checkpoint(args[0])
+    elif cmd == "resume":
+        cmd_resume()
+    elif cmd == "set-query":
+        cmd_set_query(args[0])
 
 
 if __name__ == "__main__":

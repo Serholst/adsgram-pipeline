@@ -58,6 +58,98 @@ outreach, автономно координируя агентов. Пользо
 
 Прочитай `agent-system/reference/icp.md` — для валидации запроса (вертикаль, GEO, роли в скоупе?).
 
+## Режим работы
+
+В начале сессии проверь переменную окружения `$PIPELINE_MODE`:
+
+```bash
+echo $PIPELINE_MODE
+```
+
+- `autonomous` → автономный режим (VPS, без оператора в чате)
+- `interactive` (или не задана) → текущее поведение без изменений
+
+### Autonomous: Resume
+
+Перед очисткой `data/pipeline/` проверь, есть ли незавершённый прогон:
+
+```bash
+python3 tools/pipeline_io.py resume
+```
+
+- `next_step: "start"` → новый прогон, вызови `clean`
+- `next_step: "<step>"` → resume: вызови `clean --keep-state`, пропусти
+  завершённые шаги, начни с `<step>`
+- `next_step: "done"` → прошлый прогон завершён, вызови `clean`, начни новый
+
+В начале каждого нового прогона сохрани параметры:
+
+```bash
+python3 tools/pipeline_io.py set-query '{"vertical": "...", "geo": "..."}'
+```
+
+### Autonomous: Checkpointing
+
+После каждого успешного шага вызывай:
+
+```bash
+python3 tools/pipeline_io.py checkpoint <step_name>
+```
+
+Имена шагов (в порядке выполнения):
+`exclusion` → `companydb-write-1` → `pre-enricher` → `searcher` → `discoverer`
+→ `checkpoint-1` → `enricher` → `assemble-crm` → `crm-writer` → `companydb-write-2`
+→ `outreach-writer` → `gmail-drafter` → `crm-update-drafts` → `summary`
+
+### Autonomous: Изменения в чекпойнтах
+
+**CHECKPOINT 1 (enrichment credits):**
+
+Вместо вопроса в чат вызови TG-бот:
+
+```bash
+python3 tools/tg_approval.py approval --message "Enrichment: N лидов × 1 кредит = N кредитов. Баланс: M. Одобрить?"
+```
+
+Разбери JSON-ответ:
+- `status: "approved"` → запусти Enricher (полный бюджет)
+- `status: "partial"` → запусти Enricher с `budget` из ответа
+- `status: "rejected"` → пропусти Enricher
+- `status: "timeout"` → пропусти Enricher (безопасный дефолт по финансам)
+- `status: "error"` → пропусти Enricher, включи ошибку в SUMMARY
+
+**CHECKPOINT 2 (pitches):** Пропустить. Питчи авто-одобрены.
+Оператор проверит черновики в Gmail.
+
+**CHECKPOINT 2.5 (draft preview):** Пропустить. Черновики создаются
+автоматически без preview.
+
+### Autonomous: Уведомления
+
+После завершения пайплайна отправь итоги:
+
+```bash
+python3 tools/tg_approval.py notify --message "✅ Pipeline: [vertical] [geo]\nLeads: N → CRM: N → Drafts: N\nCredits: N spent"
+```
+
+### Autonomous: Ошибки
+
+При ошибке в автономном режиме:
+
+1. Сохрани checkpoint текущего шага (если шаг частично выполнен —
+   checkpoint предыдущего)
+2. Отправь уведомление:
+   ```bash
+   python3 tools/tg_approval.py error --message "Шаг [X] упал: [причина]. State сохранён."
+   ```
+3. **Не спрашивай пользователя** — просто заверши сессию с exit code 1.
+   Shell wrapper сделает retry с resume.
+
+### Interactive: Без изменений
+
+Если `$PIPELINE_MODE` не равен `autonomous` — все чекпойнты, retry
+и взаимодействие работают как описано ниже (текущее поведение).
+
 ## Вход
 
 Запрос пользователя в формате **vertical + GEO**:
@@ -70,21 +162,25 @@ outreach, автономно координируя агентов. Пользо
 
 ### Валидация запроса
 
-Перед запуском проверь:
+**Примечание:** Основная валидация и подтверждение запроса выполняются
+на уровне autopipeline SKILL.md (Step 0 + Step 0.5). К моменту запуска
+Orchestrator запрос уже подтверждён пользователем. Orchestrator выполняет
+только техническую проверку:
 
-- Указана вертикаль? (iGaming / VPN / Crypto / Adult)
-- Указан GEO? (LATAM, Asia, Europe, Africa)
-- GEO в ICP? Если нет → уточни: «X не в нашем ICP. Продолжить?»
-- Если нет вертикали или GEO → конкретизируй:
-  «Какой регион? Какая вертикаль?»
+- Указана вертикаль? (iGaming / VPN / Crypto / Adult) — если нет → ошибка
+- Указан GEO? — если нет → ошибка
+- GEO в ICP (`agent-system/reference/icp.md`)? — если нет, но пользователь
+  подтвердил на уровне SKILL → продолжить; иначе → ошибка
+- В autonomous mode: никаких уточнений. Если запрос невалиден →
+  `tg_error` + exit.
 
 ## Механизм передачи данных
 
 Данные между агентами передаются **через файлы на диске**, не через
 твой контекст. Каждый агент:
 
-1. Читает свой вход из `/tmp/pipeline/<prev-agent>-output.json`
-2. Сохраняет полный выход в `/tmp/pipeline/<agent>-output.json`
+1. Читает свой вход из `data/pipeline/<prev-agent>-output.json`
+2. Сохраняет полный выход в `data/pipeline/<agent>-output.json`
 3. Возвращает тебе **только lightweight metadata** (counts, statuses)
 
 Ты принимаешь решения на основе metadata. Полные JSON с лидами
@@ -121,10 +217,10 @@ python3 tools/assemble_crm_package.py \
 ```
 
 Скрипт мержит `discoverer-output.json` + `enricher-output.json` +
-`pre-enricher-output.json` из `/tmp/pipeline/`, применяет маппинг
+`pre-enricher-output.json` из `data/pipeline/`, применяет маппинг
 полей (READY/SKIP, verification_status → lead_status,
 company_contacts, industry_signals) и сохраняет в
-`/tmp/pipeline/crm-writer-input.json`.
+`data/pipeline/crm-writer-input.json`.
 
 Проверь stdout — summary с counts (total_leads, ready, skip).
 
@@ -136,7 +232,7 @@ company_contacts, industry_signals) и сохраняет в
 Запрос пользователя
     │
     ▼
-python3 tools/pipeline_io.py clean  ← очистить /tmp/pipeline/
+python3 tools/pipeline_io.py clean  ← очистить data/pipeline/
     │
     ▼
 EXCLUSION + DEDUP GATES (Steps 1a-1e)
@@ -148,11 +244,11 @@ COMPANY DB WRITE 1 ← записать все approved компании
     │
     ▼
 PRE-ENRICHER ← вертикаль+GEO (Этап 0: demand-side discovery → Этап A: обогащение)
-    │            → /tmp/pipeline/pre-enricher-output.json
+    │            → data/pipeline/pre-enricher-output.json
     │            возвращает: metadata (counts)
     │
     ▼
-SEARCHER (Agent) → /tmp/pipeline/searcher-output.json
+SEARCHER (Agent) → data/pipeline/searcher-output.json
     │                читает pre-enricher с диска
     │                возвращает: metadata (counts, domains_audit)
     │
@@ -163,7 +259,7 @@ SEARCHER (Agent) → /tmp/pipeline/searcher-output.json
     │   └─ исчерпано → сообщи пользователю, стоп
     │
     ▼
-DISCOVERER (Agent) → /tmp/pipeline/discoverer-output.json
+DISCOVERER (Agent) → data/pipeline/discoverer-output.json
     │                  читает searcher-output с диска
     │                  возвращает: metadata (ready, needs_enrichment_count, skipped)
     │
@@ -178,7 +274,7 @@ DISCOVERER (Agent) → /tmp/pipeline/discoverer-output.json
 python3 tools/assemble_enricher_input.py  ← подготовь вход
     │
     ▼
-ENRICHER (Agent) → /tmp/pipeline/enricher-output.json
+ENRICHER (Agent) → data/pipeline/enricher-output.json
     │                читает enricher-input с диска
     │                возвращает: metadata (credits_spent, emails_found)
     │
@@ -203,6 +299,14 @@ OUTREACH WRITER (Agent) ← читает CRM
     │  Покажи питчи, жди одобрения
     │
     ▼
+══ CHECKPOINT 2.5 ══
+    │  Покажи 1 SAMPLE DRAFT (subject + body для первого лида)
+    │  Жди "ок" перед batch creation всех черновиков
+    │
+    ▼
+GMAIL DRAFT BATCH ← create_drafts.py
+    │
+    ▼
 SUMMARY
 ```
 
@@ -219,6 +323,17 @@ SUMMARY
   «Pre-Enricher нашёл parent companies, читай search_vectors с диска»
 - `has_person_names: true` → укажи Searcher: «есть имена для Recipe 4»
 - `companies_failed > 0` → укажи: «N компаний не обогащены, расширь фильтры»
+
+### Apollo Skip для Telegram-only компаний
+
+После Pre-Enricher, если компания имеет:
+- `enrichment_quality: "low"`
+- И `telegram` в `company_contacts.social_links`
+
+→ **НЕ отправляй** в Searcher/Enricher (сэкономь Apollo calls)
+→ В CRM записывай с **Lead Status:** `Skip`
+→ В **Notes:** `APOLLO_BLIND_SPOT. TG: @handle — manual outreach`
+→ TG outreach выполняется вручную оператором
 
 ### Searcher
 
@@ -257,7 +372,7 @@ SUMMARY
 python3 tools/crm_writer.py
 ```
 
-Скрипт читает `/tmp/pipeline/crm-writer-input.json`, выполняет валидацию,
+Скрипт читает `data/pipeline/crm-writer-input.json`, выполняет валидацию,
 дедупликацию, сортировку и запись в CRM + обновление Company DB.
 
 Результат в stdout (JSON):
@@ -272,42 +387,31 @@ python3 tools/crm_writer.py
 `crm_writer.py` уже обновляет Company DB (колонки Prospected и Search Results)
 автоматически. Результат в его output: `company_db_updated`, `companies_added`.
 
-Дополнительно обнови колонку "Company Contacts" — для этого нужно прочитать
-данные с диска (это единственный момент, когда ты читаешь pipeline-файлы):
+Дополнительно обнови колонку "Company Contacts" скриптом:
 
 ```bash
-python3 tools/pipeline_io.py read pre-enricher
-python3 tools/pipeline_io.py read enricher
+python3 tools/merge_company_contacts.py --save data/pipeline/companies_post.json
 ```
 
-Собери JSON для `companydb-update-cells` из двух источников:
+Скрипт читает `pre-enricher-output.json` и `enricher-output.json` из `data/pipeline/`,
+мержит контактные данные компаний (Pre-Enricher + Enricher, Apollo phone приоритетнее),
+исключает пустые поля, включает revenue и Marketing Intel из Apollo.
+Результат — JSON батч для `companydb-update-cells`.
 
-1. **Pre-Enricher** `company_contacts` (general_email, press_email, partnerships_email, phone, social_links)
-2. **Enricher** `organization_data[domain]` (phone, raw_address, linkedin_url, estimated_num_employees, revenue_printed)
-
-Merge-правило: Enricher данные дополняют Pre-Enricher. Если оба источника имеют `phone` — используй Apollo (точнее).
-
-Сохрани в `/tmp/companies_post.json` и запусти:
+Затем запусти:
 
 ```bash
-python3 tools/sheets_helper.py companydb-update-cells /tmp/companies_post.json
+python3 tools/sheets_helper.py companydb-update-cells data/pipeline/companies_post.json
 ```
 
-Также обнови "Est. Revenue 2024 ($M)" если текущее значение пустое и Enricher вернул `revenue_printed`.
-
-Поля "Company Contacts":
-
-- Из Enricher `organization_data`: `phone`, `address`, `employees`, `linkedin`, `revenue`
-- Из Pre-Enricher `company_contacts`: `general_email`, `press_email`, `partnerships_email`, `twitter`, `instagram`, `telegram`, `tiktok`
-- Пустые/null поля НЕ включай в JSON
-
-Также обнови:
-- "Est. Revenue 2024 ($M)" (column F) если текущее значение пустое и Enricher вернул `revenue_printed`
-- "Marketing Intel" (column M) — дополни данными из Apollo enrichment если есть новые сигналы (например, `estimated_num_employees` или revenue подтверждает масштаб acquisition-бюджета)
+Проверь stdout скрипта — summary с количеством компаний. Если `status: "empty"` —
+ни у одной компании нет контактных данных для обновления.
 
 **Это обязательное требование.** Каждая компания, отправленная в Apollo people search, ДОЛЖНА получить обновлённые Search Results и Company Contacts.
 
 ### Outreach Writer
+
+⚠️ GMAIL: Используй ТОЛЬКО `create_drafts.py`, НИКОГДА MCP `gmail_create_draft`.
 
 - Получаешь питчи (структурированные блоки для каждого лида)
 - Покажи на Checkpoint 2 пользователю
@@ -351,6 +455,14 @@ python3 tools/sheets_helper.py companydb-update-cells /tmp/companies_post.json
 - Покажи питчи для каждого лида
 - Лиды с weak/no signal — выдели отдельно
 - Жди: «одобрить все» / «одобрить кроме X» / «отклонить»
+
+**CHECKPOINT 2.5** — после одобрения питчей, перед batch creation черновиков.
+
+- Покажи пользователю **1 SAMPLE DRAFT** (subject + body для первого лида)
+- Это preview того, как черновик будет выглядеть в Gmail
+- Жди «ок» перед запуском `create_drafts.py` для всего батча
+- Если пользователь просит изменить subject/body → внеси правку, покажи заново
+- Только после подтверждения → запускай batch creation
 
 ## Стратегии оптимизации
 

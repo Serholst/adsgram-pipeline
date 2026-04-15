@@ -90,7 +90,7 @@ def get_sheets_client() -> gspread.Client:
     return gspread.authorize(creds)
 
 
-def read_sheet(gc, sheet_id: str, tab: str) -> list[dict]:
+def read_sheet(gc, sheet_id, tab):
     ss = gc.open_by_key(sheet_id)
     ws = ss.worksheet(tab)
     all_values = ws.get_all_values()
@@ -123,7 +123,7 @@ def read_sheet(gc, sheet_id: str, tab: str) -> list[dict]:
 # Gmail helper
 # ---------------------------------------------------------------------------
 
-def get_gmail_sent_emails() -> list[dict]:
+def get_gmail_sent_emails():
     """Return list of {to, subject, date} from SENT folder."""
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials as OAuthCreds
@@ -181,7 +181,7 @@ def get_gmail_sent_emails() -> list[dict]:
 # Checks
 # ---------------------------------------------------------------------------
 
-def check_sheets(gc) -> dict:
+def check_sheets(gc):
     """Run all Sheets-based validation checks."""
     leads = read_sheet(gc, CRM_SHEET_ID, "Leads")
     operators = read_sheet(gc, COMPANYDB_SHEET_ID, "Top iGaming Operators")
@@ -241,7 +241,7 @@ def check_sheets(gc) -> dict:
     }
 
 
-def check_gmail(leads_emails: set[str]) -> dict:
+def check_gmail(leads_emails):
     """Cross-reference Gmail SENT with Leads emails."""
     sent = get_gmail_sent_emails()
     sent_emails = {}
@@ -268,7 +268,7 @@ def check_gmail(leads_emails: set[str]) -> dict:
 # Report formatting
 # ---------------------------------------------------------------------------
 
-def severity(sheets_result: dict, gmail_result: dict | None) -> int:
+def severity(sheets_result, gmail_result):
     """0=ok, 1=warnings, 2=critical."""
     level = 0
     if sheets_result["missing_email"]:
@@ -282,7 +282,7 @@ def severity(sheets_result: dict, gmail_result: dict | None) -> int:
     return level
 
 
-def print_report(sheets_result: dict, gmail_result: dict | None):
+def print_report(sheets_result, gmail_result):
     """Human-readable report to stdout."""
     s = sheets_result
     print("=" * 60)

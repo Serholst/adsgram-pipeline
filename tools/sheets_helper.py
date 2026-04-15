@@ -101,7 +101,7 @@ def _get_client() -> gspread.Client:
     return _gc
 
 
-def _open_sheet(sheet_id: str, worksheet_name: str | None = None) -> gspread.Worksheet:
+def _open_sheet(sheet_id, worksheet_name=None):
     gc = _get_client()
     try:
         ss = gc.open_by_key(sheet_id)
@@ -181,6 +181,47 @@ def cmd_crm_read_all():
     _output(records)
 
 
+OUTREACH_READY_STATUSES = {"Verified", "Partially verified"}
+OUTREACH_COLUMNS = [
+    "Company", "Vertical", "Country", "Name", "Title",
+    "Email", "Email Status", "Socials", "Alt Contacts",
+    "Sources & Signals", "Lead Status", "Notes",
+]
+EMAIL_PLACEHOLDER = "(Apollo has_email)"
+
+
+def cmd_crm_read_outreach_ready():
+    """Read CRM rows ready for outreach: filtered and trimmed to relevant columns.
+
+    Filters (all must be true):
+    - Lead Status in ("Verified", "Partially verified")
+    - Email non-empty and not a placeholder
+    - Stage is empty
+    - First Contact Date is empty
+    """
+    ws = _open_crm()
+    records = ws.get_all_records(numericise_ignore=["all"])
+
+    ready = []
+    for r in records:
+        status = str(r.get("Lead Status", "")).strip()
+        email = str(r.get("Email", "")).strip()
+        stage = str(r.get("Stage", "")).strip()
+        fcd = str(r.get("First Contact Date", "")).strip()
+
+        if status not in OUTREACH_READY_STATUSES:
+            continue
+        if not email or email == EMAIL_PLACEHOLDER:
+            continue
+        if stage or fcd:
+            continue
+
+        trimmed = {col: r.get(col, "") for col in OUTREACH_COLUMNS}
+        ready.append(trimmed)
+
+    _output({"total_crm_rows": len(records), "outreach_ready": len(ready), "leads": ready})
+
+
 def cmd_crm_read_headers():
     """Read CRM header row."""
     ws = _open_crm()
@@ -195,6 +236,18 @@ def cmd_crm_append_rows(json_file: str):
         _die("JSON file must contain a list of objects")
 
     ws = _open_crm()
+
+    # Validate JSON keys against expected headers
+    warnings = []
+    all_keys = set()
+    for item in data:
+        all_keys.update(item.keys())
+    unknown_keys = sorted(all_keys - set(CRM_EXPECTED_HEADERS))
+    if unknown_keys:
+        msg = f"Unknown keys ignored: {unknown_keys}. Expected: {list(CRM_EXPECTED_HEADERS)}"
+        print(f"WARNING: {msg}", file=sys.stderr)
+        warnings.append(msg)
+
     rows = []
     for item in data:
         row = [str(item.get(col, "")) for col in CRM_EXPECTED_HEADERS]
@@ -203,7 +256,10 @@ def cmd_crm_append_rows(json_file: str):
     if rows:
         _append_rows_with_retry(ws, rows)
 
-    _output({"status": "ok", "rows_appended": len(rows)})
+    result = {"status": "ok", "rows_appended": len(rows)}
+    if warnings:
+        result["warnings"] = warnings
+    _output(result)
 
 
 def cmd_crm_dedup_set():
@@ -425,6 +481,17 @@ def cmd_companydb_append_rows(json_file: str):
     ws = _open_companydb()
     headers = ws.row_values(1)
 
+    # Validate JSON keys against sheet headers
+    warnings = []
+    all_keys = set()
+    for item in data:
+        all_keys.update(item.keys())
+    unknown_keys = sorted(all_keys - set(headers))
+    if unknown_keys:
+        msg = f"Unknown keys ignored: {unknown_keys}. Expected: {headers}"
+        print(f"WARNING: {msg}", file=sys.stderr)
+        warnings.append(msg)
+
     rows = []
     for item in data:
         row = [str(item.get(col, "")) for col in headers]
@@ -433,7 +500,10 @@ def cmd_companydb_append_rows(json_file: str):
     if rows:
         _append_rows_with_retry(ws, rows)
 
-    _output({"status": "ok", "rows_appended": len(rows)})
+    result = {"status": "ok", "rows_appended": len(rows)}
+    if warnings:
+        result["warnings"] = warnings
+    _output(result)
 
 
 # ---------------------------------------------------------------------------
@@ -467,7 +537,7 @@ def cmd_setup_crm(sheet_id: str):
 # Utility
 # ---------------------------------------------------------------------------
 
-def _read_json_file(path: str) -> dict | list:
+def _read_json_file(path):
     try:
         with open(path) as f:
             return json.load(f)
@@ -688,6 +758,7 @@ def cmd_companydb_update_cells(json_file: str):
 
 COMMANDS = {
     "crm-read-all": (cmd_crm_read_all, 0),
+    "crm-read-outreach-ready": (cmd_crm_read_outreach_ready, 0),
     "crm-read-headers": (cmd_crm_read_headers, 0),
     "crm-append-rows": (cmd_crm_append_rows, 1),
     "crm-dedup-set": (cmd_crm_dedup_set, 0),

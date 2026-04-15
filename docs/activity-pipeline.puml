@@ -1,0 +1,79 @@
+@startuml
+!theme plain
+skinparam ActivityDiamondFontSize 12
+
+start
+:Оператор задаёт **vertical + GEO**;
+
+:Исключить уже обработанные компании
+__(exclusion gate: домены, emails, пары)__;
+
+:Зафиксировать компании-кандидаты в базе;
+
+:Разведка по компаниям
+__(домены, email-паттерны, decision makers,
+контакты, parent companies)__;
+
+repeat
+  :Найти контакты через Apollo
+  __(5-рецептная воронка с fallback)__;
+repeat while (Найдены контакты?) is (Нет, есть fallback)
+-> Нет, исчерпано;
+kill
+note right: Сообщить оператору:\n0 результатов
+
+-> Да;
+
+:Верифицировать и классифицировать контакты
+__(LinkedIn check, bucket: Ready / Skip)__;
+
+if (Есть лиды без\nконтактных данных?) then (Да)
+
+  #Gold:__CHECKPOINT__
+  Оператор одобряет
+  расход кредитов Apollo|
+
+  if (Одобрено?) then (Да)
+    :Обогатить контактные данные
+    __(Apollo Enrichment, 1 кредит/лид)__;
+  else (Нет)
+  endif
+
+else (Нет)
+endif
+
+:Записать лидов в CRM
+__(валидация, дедупликация, приоритизация)__;
+
+if (CRM запись успешна?) then (success / partial)
+
+  :Обновить базу компаний
+  __(контакты, revenue, результаты поиска)__;
+
+  :Написать персонализированные питчи
+  __(Pattern Matrix A/B/C/D по сигналам)__;
+
+  #Gold:__CHECKPOINT__
+  Оператор ревьюит питчи|
+
+  if (Одобрено?) then (Да)
+    :Создать черновики в Gmail;
+
+    :Обновить статусы в CRM
+    __(Stage=Draft, дата контакта)__;
+
+    #LightGreen:__SUMMARY__
+    воронка, кредиты, рекомендации|
+    stop
+
+  else (Нет)
+    #Pink:Питчи отклонены|
+    stop
+  endif
+
+else (blocked)
+  #Pink:Escalation: CRM недоступна|
+  stop
+endif
+
+@enduml

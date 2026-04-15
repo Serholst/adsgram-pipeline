@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Read",
+      "Write",
+      "Glob",
+      "Grep",
+      "Agent",
+      "mcp__*__apollo_mixed_people_api_search",
+      "mcp__*__apollo_mixed_companies_search",
+      "mcp__*__apollo_people_match",
+      "mcp__*__apollo_people_bulk_match",
+      "mcp__*__apollo_organizations_enrich",
+      "mcp__*__apollo_organizations_bulk_enrich",
+      "mcp__*__apollo_contacts_create",
+      "mcp__*__apollo_contacts_search",
+      "mcp__*__apollo_contacts_update",
+      "mcp__*__apollo_emailer_campaigns_search",
+      "mcp__*__apollo_emailer_campaigns_add_contact_ids",
+      "mcp__*__apollo_email_accounts_index",
+      "mcp__*__apollo_users_api_profile"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'CMD=\"$CLAUDE_TOOL_INPUT_command\"; if echo \"$CMD\" | grep -qE \"(rm -rf|git push|git reset --hard|DROP TABLE|shutdown|reboot|mkfs|dd if=)\"; then echo \"BLOCKED: dangerous command in autonomous mode: $CMD\" >&2; exit 2; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -83,7 +83,7 @@ python3 tools/pipeline_io.py read pre-enricher
 После формирования JSON сохрани на диск и верни Orchestrator-у только metadata:
 
 ```bash
-python3 tools/pipeline_io.py write searcher /tmp/pipeline/searcher-output.json
+python3 tools/pipeline_io.py write searcher data/pipeline/searcher-output.json
 ```
 
 Orchestrator получает только `search_metadata` (counts, domains_audit) —

@@ -419,7 +419,7 @@ python3 tools/sheets_helper.py companydb-excluded-domains
 только lightweight metadata:
 
 ```bash
-python3 tools/pipeline_io.py write pre-enricher /tmp/pipeline/pre-enricher-output.json
+python3 tools/pipeline_io.py write pre-enricher data/pipeline/pre-enricher-output.json
 ```
 
 Скрипт автоматически извлечёт metadata (companies_processed, companies_enriched,
@@ -429,7 +429,7 @@ Orchestrator получает — полный JSON остаётся на дис
 **Порядок:**
 
 1. Сформируй полный `pre-enricher-output.json` по контракту
-2. Сохрани его в `/tmp/pipeline/pre-enricher-output.json`
+2. Сохрани его в `data/pipeline/pre-enricher-output.json`
 3. Вызови `pipeline_io.py write` — он вернёт metadata
 4. Этот metadata — твой ответ Orchestrator-у
 

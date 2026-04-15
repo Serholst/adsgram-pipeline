@@ -479,16 +479,15 @@ Just: fact → dash → question → test period.
 
 ### Paragraph 3 — CTA
 
-Soft CTA that asks for interest, not commitment.
+Media-plan CTA — offer to build a concrete deliverable, not just "share details".
 
 **Available CTAs:**
 
 | CTA | When to use |
 |---|---|
-| `Want me to send the details?` | Default — simplest |
-| `I can send the breakdown.` | For performance leads |
-| `I can share a test case from [vertical] — interested?` | When a relevant case study exists |
-| `Happy to share what's working for [vertical] advertisers in [region].` | When no case study but vertical experience exists |
+| `Send me your target GEOs and budget, and I'll put together a media plan. If it looks relevant, we can take it from there.` | Default — works for any lead |
+| `Happy to put together a media plan for [region]. Just send me your target GEOs and budget.` | When geo is known from CRM |
+| `I can put together a media plan with CPM benchmarks for [vertical] in [region] — send me your budget and I'll draft it.` | When both vertical and geo are known |
 
 **Banned CTAs:**
 - `Worth a shot to test?` — cheap
@@ -560,21 +559,23 @@ Read `Hiring:` from Sources & Signals. If the company is hiring for ICP roles:
 
 ### Step 4: Compose CTA
 
+Every CTA must lead to a **media plan** — our concrete deliverable. Ask for GEOs + budget so we can build one.
+
 Priority order:
-1. If headline gives a precise signal → use headline-driven CTA
-2. If hiring signal matches the region → use expansion-driven CTA
-3. Otherwise → use default CTA angle from Role Tier table
+1. If headline gives a precise signal → media plan CTA with geo/vertical specifics
+2. If hiring signal matches the region → media plan CTA mentioning that region
+3. Otherwise → default media plan CTA
 
 **Example combinations:**
 
 | Title | Headline | Hiring signal | CTA |
 |-------|----------|---------------|-----|
-| Media Buyer | "Scaling UA in LatAm" | Hiring: UA Manager, São Paulo | "CPM $2.50 in Brazil, 80K views/month — untapped by most UA teams" |
-| CMO | "Building [Company] into #1 operator" | — | "950M+ Telegram users, most iGaming advertisers haven't tested it yet" |
-| Affiliate Manager | — | Hiring: Media Buyer, LATAM | "11M+ views/month, test period available — new source for your expanding team" |
-| Growth Manager | "Driving Growth via Paid & Organic" | — | "New paid channel to test: Telegram. CPM from $0.90, built-in anti-fraud" |
+| Media Buyer | "Scaling UA in LatAm" | Hiring: UA Manager, São Paulo | "I can put together a media plan with CPM benchmarks for Brazil — send me your budget and I'll draft it." |
+| CMO | "Building [Company] into #1 operator" | — | "Happy to put together a media plan showing Telegram reach across your target markets. Send me your GEOs and budget." |
+| Affiliate Manager | — | Hiring: Media Buyer, LATAM | "I can draft a media plan for LATAM with volume and CPM data — just send me your target budget." |
+| Growth Manager | "Driving Growth via Paid & Organic" | — | "Send me your target GEOs and budget, and I'll put together a media plan. If it looks relevant, we can take it from there." |
 
-**Fallback:** If headline and hiring signals are both empty — use the default CTA angle from the Role Tier table. This is still better than a generic CTA because it's matched to the role.
+**Fallback:** "Send me your target GEOs and budget, and I'll put together a media plan. If it looks relevant, we can take it from there."
 
 ---
 
